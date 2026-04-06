@@ -1,26 +1,58 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Azul mais escuro — alinhado ao modelo ConectaServir */
+  --azul-principal: #1a44a6;
+  --azul-hover: #153575;
+  --azul-claro: #eef3fc;
+  --azul-borda: #8fb0e8;
+  --texto-principal: #0f172a;
+  --texto-secundario: #475569;
+  --fundo-pagina: #ffffff;
+  /* Fundo azul bem claro (leve tom frio, mais próximo do branco) */
+  --fundo-secao: #eef2f9;
+  --cinza-borda: #e2e8f0;
+  --input-borda: #cbd5e1;
+  --placeholder: #94a3b8;
+  --navbar-borda: #e2e8f0;
+  --footer-bg: #0f172a;
+  --radius-card: 16px;
+  --radius-btn: 8px;
+  --radius-input: 8px;
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.07);
+  --shadow-card-hover: 0 6px 24px rgba(0, 0, 0, 0.12);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-background: var(--fundo-pagina);
+  --color-foreground: var(--texto-principal);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-playfair), ui-serif, Georgia, serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--fundo-pagina);
+  color: var(--texto-principal);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Títulos no estilo do modelo: Inter, peso forte, leve compressão */
+.font-heading {
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.font-display {
+  font-family: var(--font-playfair), ui-serif, Georgia, serif;
+}
+
+.ds-card {
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease;
+}
+
+.ds-card:hover {
+  box-shadow: var(--shadow-card-hover);
 }
