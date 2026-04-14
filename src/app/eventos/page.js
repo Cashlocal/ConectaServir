@@ -199,8 +199,10 @@ export default function EventosPage() {
         Acompanhe as atividades e iniciativas do clube
       </p>
 
+      <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-[480px_minmax(0,1fr)] md:items-start md:gap-8">
       {/* Mini calendário */}
-      <div className="mx-auto max-w-[480px] rounded-2xl border border-[#bfdbfe] bg-white p-5 [border-width:0.5px]">
+      <div className="mx-auto w-full max-w-[480px] self-start md:sticky md:top-6 md:z-10 md:mx-0 md:w-[480px]">
+      <div className="w-full rounded-2xl border border-[#bfdbfe] bg-white p-5 [border-width:0.5px]">
         <div className="mb-4 flex items-center justify-between">
           <span className="text-base font-semibold text-[#1e3a8a]">
             {MESES[mesIdx]} {anoIdx}
@@ -265,9 +267,10 @@ export default function EventosPage() {
           })}
         </div>
       </div>
+      </div>
 
       {/* Lista */}
-      <div className="mx-auto mt-6 max-w-[480px]">
+      <div className="mx-auto w-full min-w-0 max-w-[480px] md:mx-0 md:max-w-none">
         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.06em] text-[#94a3b8]">
           Eventos de {MESES[mesIdx]}
         </p>
@@ -353,6 +356,7 @@ export default function EventosPage() {
             );
           })
         )}
+      </div>
       </div>
     </main>
   );
