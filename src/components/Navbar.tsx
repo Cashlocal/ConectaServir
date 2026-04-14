@@ -13,6 +13,7 @@ const ROTARY_LOGO =
 const links = [
   { href: "/", label: "Início" },
   { href: "/projetos", label: "Projetos" },
+  { href: "/eventos", label: "Eventos" },
   { href: "/voluntarios", label: "Voluntários" },
 ];
 
