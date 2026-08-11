@@ -190,7 +190,7 @@ async function gerarPdfBuffer({ voluntario, qtdeHoras, atividade, dataEmissao })
 }
 
 export async function POST(_req, { params }) {
-  const recordId = params?.id;
+  const { id: recordId } = await params;
 
   const apiKey = process.env.AIRTABLE_API_KEY;
   const baseId = process.env.AIRTABLE_BASE_ID;
