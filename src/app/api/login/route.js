@@ -22,8 +22,9 @@ export async function POST(req) {
       );
     }
 
-    const filter = encodeURIComponent(`{email}="${email}"`);
-    const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}?filterByFormula=${filter}&maxRecords=1`;
+    // Busca todos os registros e filtra no servidor para evitar
+    // problemas de encoding do @ na filterByFormula do Airtable
+    const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}`;
 
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${apiKey}` },
@@ -38,19 +39,26 @@ export async function POST(req) {
     }
 
     const data = await res.json();
-    const record = data.records?.[0];
+    const records = data.records ?? [];
+
+    const emailNorm = email.trim().toLowerCase();
+    const record = records.find(
+      (r) =>
+        typeof r.fields["email"] === "string" &&
+        r.fields["email"].trim().toLowerCase() === emailNorm
+    );
 
     if (!record) {
       return NextResponse.json(
-        { ok: false, message: "E-mail ou senha incorretos." },
+        { ok: false, message: "Usuário e senha inválidos." },
         { status: 401 }
       );
     }
 
-    const senhaAirtable = record.fields["Senha"] ?? "";
-    if (String(senhaAirtable) !== String(senha)) {
+    const senhaAirtable = String(record.fields["Senha"] ?? "").trim();
+    if (senhaAirtable !== String(senha).trim()) {
       return NextResponse.json(
-        { ok: false, message: "E-mail ou senha incorretos." },
+        { ok: false, message: "Usuário e senha inválidos." },
         { status: 401 }
       );
     }
