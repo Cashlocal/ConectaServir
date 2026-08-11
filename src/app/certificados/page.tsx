@@ -173,8 +173,8 @@ export default function CertificadosPage() {
                         Visualizar
                       </a>
                       <a
-                        href={cert.arquivoUrl}
-                        download={`certificado-${cert.voluntario.replace(/\s+/g, "-").toLowerCase()}.pdf`}
+                        href={`/api/certificados/download?url=${encodeURIComponent(cert.arquivoUrl)}&filename=${encodeURIComponent(`certificado-${cert.voluntario.replace(/\s+/g, "-").toLowerCase()}.pdf`)}`}
+                        download
                         className="inline-flex items-center gap-1.5 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-3.5 py-2 text-[13px] font-semibold text-[#1d4ed8] transition-colors hover:bg-[#dbeafe] [border-width:0.5px]"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
