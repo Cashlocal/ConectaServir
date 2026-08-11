@@ -106,10 +106,10 @@ export default function LoginPage() {
             </p>
             <button
               type="button"
-              onClick={() => router.push("/")}
+              onClick={() => router.push("/certificados")}
               className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#1a44a6] px-6 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#153575]"
             >
-              Ir para o início
+              Ver certificados
               <svg
                 width="14"
                 height="14"

@@ -1,5 +1,39 @@
 import { NextResponse } from "next/server";
 
+export async function GET() {
+  try {
+    const apiKey = process.env.AIRTABLE_API_KEY;
+    const baseId = process.env.AIRTABLE_BASE_ID;
+    const table = process.env.AIRTABLE_TABLE_CERTIFICADOS;
+
+    if (!apiKey || !baseId || !table) {
+      return NextResponse.json([]);
+    }
+
+    const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}?sort[0][field]=Voluntario&sort[0][direction]=asc`;
+
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      cache: "no-store",
+    });
+
+    if (!res.ok) return NextResponse.json([]);
+
+    const data = await res.json();
+    const records = (data.records ?? []).map((r) => ({
+      id: r.id,
+      voluntario: r.fields["Voluntario"] ?? "",
+      qtdeHoras: r.fields["Qtde Horas"] ?? 0,
+      atividade: r.fields["Atividade"] ?? "",
+      status: r.fields["Status"] ?? "Pendente",
+    }));
+
+    return NextResponse.json(records);
+  } catch {
+    return NextResponse.json([]);
+  }
+}
+
 export async function POST(req) {
   try {
     const { voluntario, qtdeHoras, atividade } = await req.json();

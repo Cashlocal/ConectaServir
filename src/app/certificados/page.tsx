@@ -2,275 +2,144 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
-type Voluntario = { id: string; nome: string };
+type Certificado = {
+  id: string;
+  voluntario: string;
+  qtdeHoras: number;
+  atividade: string;
+  status: string;
+};
+
+const STATUS_STYLE: Record<string, string> = {
+  Pendente: "bg-[#fef3c7] text-[#d97706]",
+  Aprovado: "bg-[#dcfce7] text-[#16a34a]",
+  Rejeitado: "bg-[#fee2e2] text-[#dc2626]",
+};
 
 export default function CertificadosPage() {
   const router = useRouter();
-
   const [pronto, setPronto] = useState(false);
-  const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
-  const [carregandoVols, setCarregandoVols] = useState(true);
+  const [certificados, setCertificados] = useState<Certificado[]>([]);
+  const [carregando, setCarregando] = useState(true);
 
-  const [voluntario, setVoluntario] = useState("");
-  const [qtdeHoras, setQtdeHoras] = useState("");
-  const [atividade, setAtividade] = useState("");
-
-  const [enviando, setEnviando] = useState(false);
-  const [sucesso, setSucesso] = useState(false);
-  const [erro, setErro] = useState("");
-
-  // Proteção de rota
   useEffect(() => {
     try {
       const raw = localStorage.getItem("usuario");
-      if (!raw) {
-        router.replace("/login");
-        return;
-      }
+      if (!raw) { router.replace("/login"); return; }
     } catch {
-      router.replace("/login");
-      return;
+      router.replace("/login"); return;
     }
     setPronto(true);
   }, [router]);
 
-  // Busca voluntários
   useEffect(() => {
     if (!pronto) return;
     (async () => {
       try {
-        const res = await fetch("/api/voluntarios-lista");
+        const res = await fetch("/api/certificados");
         const data = await res.json();
-        setVoluntarios(Array.isArray(data) ? data : []);
+        setCertificados(Array.isArray(data) ? data : []);
       } catch {
-        setVoluntarios([]);
+        setCertificados([]);
       } finally {
-        setCarregandoVols(false);
+        setCarregando(false);
       }
     })();
   }, [pronto]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setErro("");
-    setEnviando(true);
-
-    try {
-      const res = await fetch("/api/certificados", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ voluntario, qtdeHoras: Number(qtdeHoras), atividade }),
-      });
-      const data = await res.json();
-
-      if (!res.ok || data.error) {
-        setErro("Ocorreu um erro. Tente novamente.");
-        return;
-      }
-      setSucesso(true);
-    } catch {
-      setErro("Ocorreu um erro. Tente novamente.");
-    } finally {
-      setEnviando(false);
-    }
-  }
-
-  function resetar() {
-    setVoluntario("");
-    setQtdeHoras("");
-    setAtividade("");
-    setErro("");
-    setSucesso(false);
-  }
-
   if (!pronto) return null;
-
-  const inputClass =
-    "w-full rounded-xl border border-[#bfdbfe] bg-[#f8faff] px-4 py-3 text-[15px] text-[#0f172a] placeholder-[#94a3b8] outline-none transition-all [border-width:0.5px] focus:border-[#1a44a6] focus:bg-white focus:ring-2 focus:ring-[#1a44a6]/15";
 
   return (
     <main className="min-h-[calc(100vh-120px)] bg-[#eff6ff] px-6 py-12 md:px-16 md:py-[48px]">
-      <h1
-        className="text-center text-[40px] font-bold leading-tight text-[#1e3a8a] md:text-left"
-        style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}
-      >
-        Lançar Certificado
-      </h1>
-      <p className="mb-8 mt-2 text-center text-base text-[#475569] md:text-left">
-        Registre as horas de voluntariado realizadas
-      </p>
-
-      <div className="mx-auto max-w-[560px]">
-        {sucesso ? (
-          /* Card de sucesso */
-          <div className="rounded-2xl border border-[#bfdbfe] bg-white p-10 text-center shadow-[0_4px_24px_rgba(29,78,216,0.07)] [border-width:0.5px]">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#dbeafe]">
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#1d4ed8"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-            </div>
-            <h2
-              className="text-2xl font-bold text-[#1e3a8a]"
-              style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}
-            >
-              Certificado registrado com sucesso!
-            </h2>
-            <p className="mt-2 text-[15px] text-[#475569]">
-              As horas de voluntariado foram lançadas.
-            </p>
-            <button
-              type="button"
-              onClick={resetar}
-              className="mt-6 inline-flex items-center gap-2 rounded-xl border border-[#bfdbfe] bg-[#eff6ff] px-6 py-2.5 text-[14px] font-semibold text-[#1d4ed8] transition-colors hover:bg-[#dbeafe] [border-width:0.5px]"
-            >
-              Registrar outro
-            </button>
-          </div>
-        ) : (
-          /* Formulário */
-          <div className="rounded-2xl border border-[#bfdbfe] bg-white shadow-[0_4px_24px_rgba(29,78,216,0.07)] [border-width:0.5px]">
-            <form onSubmit={handleSubmit} noValidate className="space-y-6 p-10">
-              {/* Voluntário */}
-              <div>
-                <label
-                  htmlFor="voluntario"
-                  className="mb-1.5 block text-sm font-medium text-[#1e3a8a]"
-                >
-                  Voluntário <span className="text-[#dc2626]">*</span>
-                </label>
-                <select
-                  id="voluntario"
-                  required
-                  value={voluntario}
-                  onChange={(e) => setVoluntario(e.target.value)}
-                  disabled={carregandoVols}
-                  className={inputClass}
-                >
-                  <option value="">
-                    {carregandoVols
-                      ? "Carregando voluntários..."
-                      : "Selecione o voluntário..."}
-                  </option>
-                  {voluntarios.map((v) => (
-                    <option key={v.id} value={v.nome}>
-                      {v.nome}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Quantidade de horas */}
-              <div>
-                <label
-                  htmlFor="qtdeHoras"
-                  className="mb-1.5 block text-sm font-medium text-[#1e3a8a]"
-                >
-                  Quantidade de Horas <span className="text-[#dc2626]">*</span>
-                </label>
-                <input
-                  id="qtdeHoras"
-                  type="number"
-                  min={1}
-                  max={999}
-                  required
-                  value={qtdeHoras}
-                  onChange={(e) => setQtdeHoras(e.target.value)}
-                  placeholder="Ex: 4"
-                  className={inputClass}
-                />
-              </div>
-
-              {/* Descrição da atividade */}
-              <div>
-                <label
-                  htmlFor="atividade"
-                  className="mb-1.5 block text-sm font-medium text-[#1e3a8a]"
-                >
-                  Descrição da Atividade <span className="text-[#dc2626]">*</span>
-                </label>
-                <textarea
-                  id="atividade"
-                  rows={4}
-                  required
-                  value={atividade}
-                  onChange={(e) => setAtividade(e.target.value)}
-                  placeholder="Descreva a atividade realizada..."
-                  className={`${inputClass} resize-none`}
-                />
-              </div>
-
-              {/* Erro */}
-              {erro && (
-                <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 [border-width:0.5px]">
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="shrink-0"
-                    aria-hidden="true"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="8" x2="12" y2="12" />
-                    <line x1="12" y1="16" x2="12.01" y2="16" />
-                  </svg>
-                  {erro}
-                </div>
-              )}
-
-              {/* Botão */}
-              <button
-                type="submit"
-                disabled={enviando || !voluntario || !qtdeHoras || !atividade}
-                className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-[#1d4ed8] px-6 py-[14px] text-[15px] font-semibold text-white transition-colors hover:bg-[#1e40af] focus:outline-none focus:ring-2 focus:ring-[#1d4ed8]/40 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {enviando ? (
-                  <>
-                    <svg
-                      className="h-4 w-4 animate-spin"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      aria-hidden="true"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      />
-                    </svg>
-                    Registrando...
-                  </>
-                ) : (
-                  "Registrar Certificado"
-                )}
-              </button>
-            </form>
-          </div>
-        )}
+      {/* Cabeçalho */}
+      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h1
+            className="text-[40px] font-bold leading-tight text-[#1e3a8a]"
+            style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}
+          >
+            Certificados
+          </h1>
+          <p className="mt-2 text-base text-[#475569]">
+            Horas de voluntariado registradas
+          </p>
+        </div>
+        <Link
+          href="/certificados/novo"
+          className="inline-flex items-center gap-2 rounded-xl bg-[#1d4ed8] px-5 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-[#1e40af] md:self-auto self-start"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Emitir novo certificado
+        </Link>
       </div>
+
+      {/* Conteúdo */}
+      {carregando ? (
+        <div className="space-y-3">
+          {[0, 1, 2].map((k) => (
+            <div
+              key={k}
+              className="h-24 rounded-2xl bg-[#dbeafe] opacity-60"
+              style={{ animation: "certSkel 1.2s ease-in-out infinite" }}
+            />
+          ))}
+          <style>{`@keyframes certSkel { 0%,100%{opacity:.4} 50%{opacity:.8} }`}</style>
+        </div>
+      ) : certificados.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#dbeafe]">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+            </svg>
+          </div>
+          <p className="text-[16px] font-medium text-[#475569]">Nenhum certificado registrado ainda.</p>
+          <Link href="/certificados/novo" className="mt-4 text-[14px] font-semibold text-[#1d4ed8] hover:underline">
+            Registrar o primeiro
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {certificados.map((cert) => {
+            const statusClass = STATUS_STYLE[cert.status] ?? "bg-[#f1f5f9] text-[#475569]";
+            return (
+              <div
+                key={cert.id}
+                className="flex flex-col gap-3 rounded-2xl border border-[#e2e8f0] bg-white px-5 py-4 transition-all [border-width:0.5px] hover:border-[#bfdbfe] hover:shadow-[0_2px_12px_rgba(29,78,216,0.07)] sm:flex-row sm:items-center sm:gap-6"
+              >
+                {/* Horas */}
+                <div className="flex w-16 shrink-0 flex-col items-center justify-center rounded-[10px] border border-[#93c5fd] bg-[#eff6ff] px-2 py-3 text-center [border-width:0.5px]">
+                  <span className="text-2xl font-bold leading-none text-[#1d4ed8]">
+                    {cert.qtdeHoras}
+                  </span>
+                  <span className="mt-1 text-[10px] font-medium uppercase text-[#1d4ed8]">
+                    {cert.qtdeHoras === 1 ? "hora" : "horas"}
+                  </span>
+                </div>
+
+                {/* Info */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-[15px] font-semibold text-[#1e3a8a]">
+                      {cert.voluntario}
+                    </h2>
+                    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${statusClass}`}>
+                      {cert.status}
+                    </span>
+                  </div>
+                  <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#64748b]">
+                    {cert.atividade}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </main>
   );
 }
