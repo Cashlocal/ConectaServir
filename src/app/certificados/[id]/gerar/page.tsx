@@ -66,6 +66,17 @@ export default function GerarCertificadoPage() {
         setErro(data.error ?? "Ocorreu um erro. Tente novamente.");
         return;
       }
+      // Se o Airtable não armazenou via URL, baixa direto do base64
+      if (!data.arquivoSalvo && data.pdfBase64) {
+        const bytes = Uint8Array.from(atob(data.pdfBase64), (c) => c.charCodeAt(0));
+        const blob = new Blob([bytes], { type: "application/pdf" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = data.filename ?? "certificado.pdf";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
       setSucesso(true);
     } catch {
       setErro("Erro de conexão. Tente novamente.");
