@@ -33,6 +33,7 @@ export default function LoginPage() {
       }
 
       localStorage.setItem("usuario", JSON.stringify(data.user));
+      window.dispatchEvent(new CustomEvent("usuario-autenticado", { detail: data.user }));
       setUsuarioLocalizado(data.user);
     } catch {
       setErro("Erro de conexão. Tente novamente.");

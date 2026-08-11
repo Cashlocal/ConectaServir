@@ -34,6 +34,14 @@ export function Navbar() {
     } catch {
       // localStorage indisponível (SSR) — ignora
     }
+
+    function handleLogin(e: Event) {
+      const detail = (e as CustomEvent<Usuario>).detail;
+      if (detail) setUsuario(detail);
+    }
+
+    window.addEventListener("usuario-autenticado", handleLogin);
+    return () => window.removeEventListener("usuario-autenticado", handleLogin);
   }, []);
 
   useEffect(() => {
