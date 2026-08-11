@@ -10,10 +10,12 @@ type Certificado = {
   qtdeHoras: number;
   atividade: string;
   status: string;
+  arquivoUrl: string | null;
 };
 
 const STATUS_STYLE: Record<string, string> = {
   Pendente: "bg-[#fef3c7] text-[#d97706]",
+  Emitido: "bg-[#dcfce7] text-[#16a34a]",
   Aprovado: "bg-[#dcfce7] text-[#16a34a]",
   Rejeitado: "bg-[#fee2e2] text-[#dc2626]",
 };
@@ -106,6 +108,9 @@ export default function CertificadosPage() {
         <div className="space-y-3">
           {certificados.map((cert) => {
             const statusClass = STATUS_STYLE[cert.status] ?? "bg-[#f1f5f9] text-[#475569]";
+            const isPendente = cert.status === "Pendente";
+            const isEmitido = cert.status === "Emitido";
+
             return (
               <div
                 key={cert.id}
@@ -134,6 +139,43 @@ export default function CertificadosPage() {
                   <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#64748b]">
                     {cert.atividade}
                   </p>
+                </div>
+
+                {/* Ações */}
+                <div className="shrink-0">
+                  {isPendente && (
+                    <Link
+                      href={`/certificados/${cert.id}/gerar`}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-3.5 py-2 text-[13px] font-semibold text-[#1d4ed8] transition-colors hover:bg-[#dbeafe] [border-width:0.5px]"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="12" y1="18" x2="12" y2="12" />
+                        <line x1="9" y1="15" x2="15" y2="15" />
+                      </svg>
+                      Gerar certificado
+                    </Link>
+                  )}
+
+                  {isEmitido && cert.arquivoUrl && (
+                    <a
+                      href={cert.arquivoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#bbf7d0] bg-[#f0fdf4] px-3.5 py-2 text-[13px] font-semibold text-[#16a34a] transition-colors hover:bg-[#dcfce7] [border-width:0.5px]"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                      Visualizar
+                    </a>
+                  )}
+
+                  {isEmitido && !cert.arquivoUrl && (
+                    <span className="text-[12px] text-[#94a3b8]">Arquivo indisponível</span>
+                  )}
                 </div>
               </div>
             );

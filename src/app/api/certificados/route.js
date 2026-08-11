@@ -20,13 +20,20 @@ export async function GET() {
     if (!res.ok) return NextResponse.json([]);
 
     const data = await res.json();
-    const records = (data.records ?? []).map((r) => ({
-      id: r.id,
-      voluntario: r.fields["Voluntario"] ?? "",
-      qtdeHoras: r.fields["Qtde Horas"] ?? 0,
-      atividade: r.fields["Atividade"] ?? "",
-      status: r.fields["Status"] ?? "Pendente",
-    }));
+    const records = (data.records ?? []).map((r) => {
+      const anexos = r.fields["Certificado gerado"];
+      const arquivoUrl = Array.isArray(anexos) && anexos.length > 0
+        ? anexos[0].url
+        : null;
+      return {
+        id: r.id,
+        voluntario: r.fields["Voluntario"] ?? "",
+        qtdeHoras: r.fields["Qtde Horas"] ?? 0,
+        atividade: r.fields["Atividade"] ?? "",
+        status: r.fields["Status"] ?? "Pendente",
+        arquivoUrl,
+      };
+    });
 
     return NextResponse.json(records);
   } catch {
