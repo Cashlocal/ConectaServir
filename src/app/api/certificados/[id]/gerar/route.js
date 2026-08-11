@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import FormDataNode from "form-data";
 
 export const runtime = "nodejs";
 
@@ -221,25 +222,32 @@ export async function POST(_req, { params }) {
     const pdfBuffer = await gerarPdfBuffer({ voluntario, qtdeHoras, atividade, dataEmissao });
     const filename = `certificado-${voluntario.replace(/\s+/g, "-").toLowerCase()}.pdf`;
 
-    // 3. Upload do PDF como anexo no Airtable
-    const formData = new FormData();
-    formData.append("file", new Blob([pdfBuffer], { type: "application/pdf" }), filename);
-    formData.append("filename", filename);
-    formData.append("contentType", "application/pdf");
+    // 3. Upload do PDF como anexo no Airtable usando form-data
+    const form = new FormDataNode();
+    form.append("file", Buffer.from(pdfBuffer), {
+      filename,
+      contentType: "application/pdf",
+    });
 
     const uploadRes = await fetch(
       `https://content.airtable.com/v0/${baseId}/${recordId}/${encodeURIComponent("Certificado gerado")}/uploadAttachment`,
       {
         method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}` },
-        body: formData,
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          ...form.getHeaders(),
+        },
+        body: form,
       }
     );
 
     if (!uploadRes.ok) {
-      const errBody = await uploadRes.json().catch(() => ({}));
-      console.error("Airtable upload error:", errBody);
-      return NextResponse.json({ error: "Erro ao salvar o arquivo no servidor." }, { status: 502 });
+      const errText = await uploadRes.text().catch(() => "");
+      console.error("Airtable upload error:", uploadRes.status, errText);
+      return NextResponse.json(
+        { error: `Erro ao salvar o arquivo (${uploadRes.status}): ${errText.slice(0, 200)}` },
+        { status: 502 }
+      );
     }
 
     // 4. Atualizar status para Emitido
