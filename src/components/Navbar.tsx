@@ -70,6 +70,27 @@ export function Navbar() {
                 {label}
               </Link>
             ))}
+            <Link
+              href="/login"
+              className="ml-2 inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-[#1a44a6] px-4 py-2 text-[14px] font-semibold text-white transition-colors duration-200 hover:bg-[#153575]"
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                <polyline points="10 17 15 12 10 7" />
+                <line x1="15" y1="12" x2="3" y2="12" />
+              </svg>
+              Login
+            </Link>
           </nav>
 
           <button
@@ -125,6 +146,28 @@ export function Navbar() {
                   {label}
                 </Link>
               ))}
+              <Link
+                href="/login"
+                className="mt-2 flex items-center gap-2 rounded-lg bg-[#1a44a6] px-4 py-3 text-[15px] font-semibold text-white transition-colors hover:bg-[#153575]"
+                onClick={() => setOpen(false)}
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                  <polyline points="10 17 15 12 10 7" />
+                  <line x1="15" y1="12" x2="3" y2="12" />
+                </svg>
+                Login
+              </Link>
             </nav>
           </div>
         </div>

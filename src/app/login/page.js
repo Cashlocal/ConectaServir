@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,10 +10,12 @@ export default function LoginPage() {
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState("");
+  const [usuarioLocalizado, setUsuarioLocalizado] = useState(null);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setErro("");
+    setUsuarioLocalizado(null);
     setCarregando(true);
 
     try {
@@ -27,12 +28,12 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!data.ok) {
-        setErro(data.message || "Credenciais inválidas.");
+        setErro("Usuário e senha inválidos.");
         return;
       }
 
       sessionStorage.setItem("usuario", JSON.stringify(data.user));
-      router.push("/");
+      setUsuarioLocalizado(data.user);
     } catch {
       setErro("Erro de conexão. Tente novamente.");
     } finally {
@@ -72,7 +73,62 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Card do formulário */}
+        {/* Card de sucesso */}
+        {usuarioLocalizado ? (
+          <div className="rounded-2xl border border-[#bbf7d0] bg-white p-8 text-center shadow-[0_4px_24px_rgba(22,163,74,0.08)] [border-width:0.5px]">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#dcfce7]">
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#16a34a"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            </div>
+            <h2
+              className="text-2xl font-bold text-[#15803d]"
+              style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}
+            >
+              Usuário localizado!
+            </h2>
+            <p className="mt-2 text-[15px] text-[#475569]">
+              Bem-vindo(a),{" "}
+              <span className="font-semibold text-[#1e3a8a]">
+                {usuarioLocalizado.nome || usuarioLocalizado.email}
+              </span>
+              .
+            </p>
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#1a44a6] px-6 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#153575]"
+            >
+              Ir para o início
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </button>
+          </div>
+        ) : (
+
+        /* Card do formulário */
         <div className="rounded-2xl border border-[#bfdbfe] bg-white p-8 shadow-[0_4px_24px_rgba(29,78,216,0.07)] [border-width:0.5px]">
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
             {/* Campo e-mail */}
@@ -213,6 +269,7 @@ export default function LoginPage() {
             </button>
           </form>
         </div>
+        )}
 
         <p className="mt-6 text-center text-xs text-[#94a3b8]">
           ConectaServir · Rotary Club de Pato Branco
