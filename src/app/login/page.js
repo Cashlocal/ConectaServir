@@ -32,7 +32,7 @@ export default function LoginPage() {
         return;
       }
 
-      sessionStorage.setItem("usuario", JSON.stringify(data.user));
+      localStorage.setItem("usuario", JSON.stringify(data.user));
       setUsuarioLocalizado(data.user);
     } catch {
       setErro("Erro de conexão. Tente novamente.");
