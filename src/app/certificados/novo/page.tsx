@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-type Voluntario = { id: string; nome: string };
+type Voluntario = { id: string; nome: string; email: string };
 type Entidade   = { id: string; nome: string };
 
 export default function NovoCertificadoPage() {
@@ -16,7 +16,7 @@ export default function NovoCertificadoPage() {
   const [entidades, setEntidades] = useState<Entidade[]>([]);
   const [carregandoEnts, setCarregandoEnts] = useState(true);
 
-  const [voluntario, setVoluntario]       = useState("");
+  const [voluntarioId, setVoluntarioId]       = useState("");
   const [qtdeHoras, setQtdeHoras]         = useState("");
   const [atividade, setAtividade]         = useState("");
   const [entidadeId, setEntidadeId]       = useState("");
@@ -97,7 +97,7 @@ export default function NovoCertificadoPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          voluntario,
+          voluntarioId,
           qtdeHoras: Number(qtdeHoras),
           atividade,
           entidadeId: entidadeId || undefined,
@@ -114,7 +114,7 @@ export default function NovoCertificadoPage() {
   }
 
   function resetar() {
-    setVoluntario(""); setQtdeHoras(""); setAtividade("");
+    setVoluntarioId(""); setQtdeHoras(""); setAtividade("");
     setEntidadeId(""); setEntidadeNome(""); setEntidadeBusca("");
     setErro(""); setSucesso(false);
   }
@@ -186,14 +186,14 @@ export default function NovoCertificadoPage() {
                 <select
                   id="voluntario"
                   required
-                  value={voluntario}
-                  onChange={(e) => setVoluntario(e.target.value)}
+                  value={voluntarioId}
+                  onChange={(e) => setVoluntarioId(e.target.value)}
                   disabled={carregandoVols}
                   className={inputClass}
                 >
                   <option value="">{carregandoVols ? "Carregando voluntários..." : "Selecione o voluntário..."}</option>
                   {voluntarios.map((v) => (
-                    <option key={v.id} value={v.nome}>{v.nome}</option>
+                    <option key={v.id} value={v.id}>{v.nome}</option>
                   ))}
                 </select>
               </div>
@@ -285,7 +285,7 @@ export default function NovoCertificadoPage() {
 
               <button
                 type="submit"
-                disabled={enviando || !voluntario || !atividade || !qtdeHoras}
+                disabled={enviando || !voluntarioId || !atividade || !qtdeHoras}
                 className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-[#1d4ed8] px-6 py-[14px] text-[15px] font-semibold text-white transition-colors hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {enviando ? (

@@ -3,7 +3,8 @@ import { gerarCertificadoPdf } from "@/lib/gerarCertificadoPdf";
 
 export const runtime = "nodejs";
 
-const TABLE_ENTIDADES = process.env.AIRTABLE_TABLE_ENTIDADES ?? "tblPIOP4H76gOOPSe";
+const TABLE_ENTIDADES  = process.env.AIRTABLE_TABLE_ENTIDADES  ?? "tblPIOP4H76gOOPSe";
+const TABLE_VOLUNTARIOS = process.env.AIRTABLE_TABLE_VOLUNTARIOS ?? "";
 
 async function buscarNomeEntidade(apiKey, baseId, recordId) {
   try {
@@ -16,6 +17,25 @@ async function buscarNomeEntidade(apiKey, baseId, recordId) {
     return data.fields?.["Nome"] ?? "";
   } catch {
     return "";
+  }
+}
+
+async function buscarDadosVoluntario(apiKey, baseId, recordId) {
+  try {
+    const table = TABLE_VOLUNTARIOS || process.env.AIRTABLE_TABLE_VOLUNTARIOS;
+    if (!table) return { nome: "", email: "" };
+    const res = await fetch(
+      `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}/${recordId}`,
+      { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" }
+    );
+    if (!res.ok) return { nome: "", email: "" };
+    const data = await res.json();
+    return {
+      nome:  data.fields?.["Nome Completo"] ?? "",
+      email: data.fields?.["Email"]         ?? "",
+    };
+  } catch {
+    return { nome: "", email: "" };
   }
 }
 
@@ -40,12 +60,18 @@ export async function POST(req, { params }) {
     }
 
     const rec = await recRes.json();
-    const voluntario  = rec.fields["Voluntario"] ?? "";
     const qtdeHoras   = rec.fields["Qtde Horas"] ?? 0;
     const atividade   = rec.fields["Atividade"] ?? "";
     const dataEmissao = new Date().toLocaleDateString("pt-BR", {
       day: "2-digit", month: "long", year: "numeric",
     });
+
+    // Voluntário é linked record → resolve nome
+    const voluntarioIds = rec.fields["Voluntario"];
+    const voluntarioId  = Array.isArray(voluntarioIds) ? voluntarioIds[0] : null;
+    const { nome: voluntario } = voluntarioId
+      ? await buscarDadosVoluntario(apiKey, baseId, voluntarioId)
+      : { nome: "" };
 
     // Buscar nome da entidade vinculada
     const entidadeIds = rec.fields["Entidade"];

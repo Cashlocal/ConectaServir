@@ -1,32 +1,86 @@
 import { NextResponse } from "next/server";
 
+const TABLE_ENTIDADES = process.env.AIRTABLE_TABLE_ENTIDADES ?? "tblPIOP4H76gOOPSe";
+
 export async function GET() {
   try {
-    const apiKey = process.env.AIRTABLE_API_KEY;
-    const baseId = process.env.AIRTABLE_BASE_ID;
-    const table = process.env.AIRTABLE_TABLE_CERTIFICADOS;
+    const apiKey   = process.env.AIRTABLE_API_KEY;
+    const baseId   = process.env.AIRTABLE_BASE_ID;
+    const table    = process.env.AIRTABLE_TABLE_CERTIFICADOS;
+    const tableVol = process.env.AIRTABLE_TABLE_VOLUNTARIOS;
 
     if (!apiKey || !baseId || !table) return NextResponse.json([]);
 
-    const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}?sort[0][field]=Voluntario&sort[0][direction]=asc`;
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${apiKey}` },
-      cache: "no-store",
-    });
+    // Busca certificados, voluntários e entidades em paralelo para resolver linked records
+    const volParams = new URLSearchParams();
+    volParams.append("fields[]", "Nome Completo");
+    volParams.append("fields[]", "Email");
 
-    if (!res.ok) return NextResponse.json([]);
+    const entParams = new URLSearchParams();
+    entParams.append("fields[]", "Nome");
 
-    const data = await res.json();
-    const records = (data.records ?? []).map((r) => {
-      const anexos = r.fields["Certificado gerado"];
+    const [certRes, volRes, entRes] = await Promise.all([
+      fetch(
+        `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}?sort[0][field]=Atividade&sort[0][direction]=asc`,
+        { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" }
+      ),
+      tableVol
+        ? fetch(
+            `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableVol)}?${volParams}`,
+            { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" }
+          )
+        : Promise.resolve(null),
+      fetch(
+        `https://api.airtable.com/v0/${baseId}/${TABLE_ENTIDADES}?${entParams}`,
+        { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" }
+      ),
+    ]);
+
+    if (!certRes.ok) return NextResponse.json([]);
+
+    // Mapa id → { nome, email } para voluntários
+    const volMap = {};
+    if (volRes && volRes.ok) {
+      const vd = await volRes.json();
+      for (const r of vd.records ?? []) {
+        volMap[r.id] = {
+          nome:  r.fields["Nome Completo"] ?? "",
+          email: r.fields["Email"]         ?? "",
+        };
+      }
+    }
+
+    // Mapa id → nome para entidades
+    const entMap = {};
+    if (entRes && entRes.ok) {
+      const ed = await entRes.json();
+      for (const r of ed.records ?? []) {
+        entMap[r.id] = r.fields["Nome"] ?? "";
+      }
+    }
+
+    const certData = await certRes.json();
+    const records  = (certData.records ?? []).map((r) => {
+      const anexos     = r.fields["Certificado gerado"];
       const arquivoUrl = Array.isArray(anexos) && anexos.length > 0 ? anexos[0].url : null;
+
+      // Voluntário é linked record → resolve nome e email
+      const voluntarioIds = r.fields["Voluntario"];
+      const voluntarioId  = Array.isArray(voluntarioIds) ? voluntarioIds[0] : null;
+      const volInfo       = voluntarioId ? volMap[voluntarioId] : null;
+
+      // Entidade é linked record → resolve nome
+      const entidadeIds = r.fields["Entidade"];
+      const entidadeId  = Array.isArray(entidadeIds) ? entidadeIds[0] : null;
+
       return {
-        id: r.id,
-        voluntario: r.fields["Voluntario"] ?? "",
-        qtdeHoras: r.fields["Qtde Horas"] ?? 0,
-        atividade: r.fields["Atividade"] ?? "",
-        entidadeId: Array.isArray(r.fields["Entidade"]) ? r.fields["Entidade"][0] : null,
-        status: r.fields["Status"] ?? "Pendente",
+        id:              r.id,
+        voluntario:      volInfo?.nome  ?? "",
+        voluntarioEmail: volInfo?.email ?? "",
+        qtdeHoras:       r.fields["Qtde Horas"] ?? 0,
+        atividade:       r.fields["Atividade"]  ?? "",
+        entidade:        entidadeId ? (entMap[entidadeId] ?? "") : "",
+        status:          r.fields["Status"]     ?? "Pendente",
         arquivoUrl,
       };
     });
@@ -39,25 +93,25 @@ export async function GET() {
 
 export async function POST(req) {
   try {
-    const { voluntario, qtdeHoras, atividade, entidadeId } = await req.json();
+    const { voluntarioId, qtdeHoras, atividade, entidadeId } = await req.json();
 
-    if (!voluntario || !atividade) {
+    if (!voluntarioId || !atividade) {
       return NextResponse.json({ error: "Campos obrigatórios faltando." }, { status: 400 });
     }
 
     const apiKey = process.env.AIRTABLE_API_KEY;
     const baseId = process.env.AIRTABLE_BASE_ID;
-    const table = process.env.AIRTABLE_TABLE_CERTIFICADOS;
+    const table  = process.env.AIRTABLE_TABLE_CERTIFICADOS;
 
     if (!apiKey || !baseId || !table) {
       return NextResponse.json({ error: "Configuração do servidor incompleta." }, { status: 500 });
     }
 
     const fields = {
-      Voluntario: voluntario,
+      Voluntario:   [voluntarioId],          // linked record
       "Qtde Horas": Number(qtdeHoras) || 0,
-      Atividade: atividade,
-      Status: "Pendente",
+      Atividade:    atividade,
+      Status:       "Pendente",
     };
 
     if (entidadeId) {
@@ -75,7 +129,10 @@ export async function POST(req) {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return NextResponse.json({ error: err?.error?.message ?? "Erro ao salvar." }, { status: 502 });
+      return NextResponse.json(
+        { error: err?.error?.message ?? "Erro ao salvar." },
+        { status: 502 }
+      );
     }
 
     return NextResponse.json({ success: true });

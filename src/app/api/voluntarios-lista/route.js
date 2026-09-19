@@ -26,6 +26,7 @@ export async function GET() {
       .map((r) => ({
         id: r.id,
         nome: r.fields["Nome Completo"] ?? "",
+        email: r.fields["Email"] ?? "",
       }))
       .filter((r) => r.nome)
       .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));

@@ -7,8 +7,10 @@ import Link from "next/link";
 type Certificado = {
   id: string;
   voluntario: string;
+  voluntarioEmail: string;
   qtdeHoras: number;
   atividade: string;
+  entidade: string;
   status: string;
   arquivoUrl: string | null;
 };
@@ -25,6 +27,9 @@ export default function CertificadosPage() {
   const [pronto, setPronto] = useState(false);
   const [certificados, setCertificados] = useState<Certificado[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [enviandoEmail, setEnviandoEmail] = useState<string | null>(null); // id do cert sendo enviado
+  const [emailSucesso, setEmailSucesso]   = useState<string | null>(null); // id com envio ok
+  const [emailErro, setEmailErro]         = useState<string | null>(null); // id com erro
 
   useEffect(() => {
     try {
@@ -52,6 +57,26 @@ export default function CertificadosPage() {
   }, [pronto]);
 
   if (!pronto) return null;
+
+  async function enviarEmail(certId: string) {
+    setEnviandoEmail(certId);
+    setEmailSucesso(null);
+    setEmailErro(null);
+    try {
+      const res = await fetch(`/api/certificados/${certId}/enviar-email`, { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setEmailErro(data.error ?? "Erro ao enviar.");
+      } else {
+        setEmailSucesso(certId);
+        setTimeout(() => setEmailSucesso(null), 4000);
+      }
+    } catch {
+      setEmailErro("Erro inesperado. Tente novamente.");
+    } finally {
+      setEnviandoEmail(null);
+    }
+  }
 
   return (
     <main className="min-h-[calc(100vh-120px)] bg-[#eff6ff] px-6 py-12 md:px-16 md:py-[48px]">
@@ -159,7 +184,7 @@ export default function CertificadosPage() {
                   )}
 
                   {isEmitido && cert.arquivoUrl && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <a
                         href={cert.arquivoUrl}
                         target="_blank"
@@ -184,7 +209,49 @@ export default function CertificadosPage() {
                         </svg>
                         Download
                       </a>
+
+                      {/* Botão Enviar Email */}
+                      <button
+                        type="button"
+                        onClick={() => enviarEmail(cert.id)}
+                        disabled={enviandoEmail === cert.id}
+                        title={cert.voluntarioEmail ? `Enviar para ${cert.voluntarioEmail}` : "Email do voluntário não cadastrado"}
+                        className={`inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-[13px] font-semibold transition-colors [border-width:0.5px] disabled:cursor-not-allowed disabled:opacity-60
+                          ${emailSucesso === cert.id
+                            ? "border-[#bbf7d0] bg-[#f0fdf4] text-[#16a34a]"
+                            : "border-[#e9d5ff] bg-[#faf5ff] text-[#7c3aed] hover:bg-[#ede9fe]"
+                          }`}
+                      >
+                        {enviandoEmail === cert.id ? (
+                          <>
+                            <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                            </svg>
+                            Enviando...
+                          </>
+                        ) : emailSucesso === cert.id ? (
+                          <>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M20 6L9 17l-5-5" />
+                            </svg>
+                            Enviado!
+                          </>
+                        ) : (
+                          <>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                              <polyline points="22,6 12,13 2,6" />
+                            </svg>
+                            Enviar Email
+                          </>
+                        )}
+                      </button>
                     </div>
+                  )}
+
+                  {isEmitido && cert.arquivoUrl && emailErro && enviandoEmail !== cert.id && (
+                    <p className="mt-1 text-[12px] text-[#dc2626]">{emailErro}</p>
                   )}
 
                   {isEmitido && !cert.arquivoUrl && (
