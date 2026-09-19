@@ -112,7 +112,6 @@ export default function EventosPage() {
   const now = new Date();
   const [mesIdx, setMesIdx] = useState(now.getUTCMonth());
   const [anoIdx, setAnoIdx] = useState(now.getUTCFullYear());
-  const [hoveredId, setHoveredId] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -200,10 +199,8 @@ export default function EventosPage() {
         Acompanhe as atividades e iniciativas do clube
       </p>
 
-      <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-[480px_minmax(0,1fr)] md:items-start md:gap-8">
       {/* Mini calendário */}
-      <div className="mx-auto w-full max-w-[480px] self-start md:sticky md:top-6 md:z-10 md:mx-0 md:w-[480px]">
-      <div className="w-full rounded-2xl border border-[#bfdbfe] bg-white p-5 [border-width:0.5px]">
+      <div className="mx-auto max-w-[480px] rounded-2xl border border-[#bfdbfe] bg-white p-5 [border-width:0.5px]">
         <div className="mb-4 flex items-center justify-between">
           <span className="text-base font-semibold text-[#1e3a8a]">
             {MESES[mesIdx]} {anoIdx}
@@ -268,10 +265,9 @@ export default function EventosPage() {
           })}
         </div>
       </div>
-      </div>
 
       {/* Lista */}
-      <div className="mx-auto w-full min-w-0 max-w-[480px] md:mx-0 md:max-w-none">
+      <div className="mx-auto mt-6 max-w-[480px]">
         <p className="mb-3 text-xs font-semibold uppercase tracking-[0.06em] text-[#94a3b8]">
           Eventos de {MESES[mesIdx]}
         </p>
@@ -308,21 +304,7 @@ export default function EventosPage() {
             return (
               <div
                 key={ev.id}
-                onMouseEnter={() => setHoveredId(ev.id)}
-                onMouseLeave={() => setHoveredId(null)}
-                style={{
-                  transition: "all 0.2s ease",
-                  transform:
-                    hoveredId === ev.id ? "translateY(-2px)" : "translateY(0)",
-                  boxShadow:
-                    hoveredId === ev.id
-                      ? "0 8px 24px rgba(29,78,216,0.10)"
-                      : "none",
-                  borderColor:
-                    hoveredId === ev.id ? "#93c5fd" : "#e2e8f0",
-                  cursor: "pointer",
-                }}
-                className="mb-2.5 flex gap-4 rounded-2xl border bg-white px-4 py-3.5 [border-width:0.5px] last:mb-0 md:p-5"
+                className="mb-2.5 flex gap-4 rounded-2xl border border-[#e2e8f0] bg-white px-4 py-3.5 transition-all [border-width:0.5px] last:mb-0 hover:border-[#bfdbfe] hover:shadow-[0_2px_12px_rgba(29,78,216,0.06)] md:p-5"
               >
                 <div
                   className={`flex w-11 shrink-0 flex-col items-center justify-center rounded-[10px] border border-[#93c5fd] px-1.5 py-2 text-center [border-width:0.5px] md:w-[52px] ${
@@ -371,7 +353,6 @@ export default function EventosPage() {
             );
           })
         )}
-      </div>
       </div>
     </main>
   );
