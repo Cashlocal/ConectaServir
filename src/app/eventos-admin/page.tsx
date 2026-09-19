@@ -390,7 +390,7 @@ export default function EventosAdminPage() {
                   className={`${inputClass} cursor-pointer file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-[#dbeafe] file:px-3 file:py-1 file:text-[13px] file:font-medium file:text-[#1d4ed8]`}
                 />
                 {bannerPreview && (
-                  <div className="relative mt-2 inline-block">
+                  <div className="relative mt-2 inline-block w-full">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={bannerPreview}
