@@ -150,7 +150,7 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, en
 
   // ── TEXTO INTRODUTÓRIO ─────────────────────────────────────────────────────
   const introSize = 10.5;
-  const introText = "o Rotary Club de Pato Branco certifica a participação de";
+  const introText = "certifica a participação de";
   const introY    = subY - 30;
   page.drawText(introText, { x: cx(introText, regular, introSize, width), y: introY, size: introSize, font: regular, color: AZUL_TITULO });
   // ── NOME (FONTE SCRIPT) ────────────────────────────────────────────────────

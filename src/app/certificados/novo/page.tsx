@@ -259,13 +259,14 @@ export default function NovoCertificadoPage() {
               {/* Quantidade de Horas */}
               <div>
                 <label htmlFor="qtdeHoras" className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">
-                  Quantidade de Horas
+                  Quantidade de Horas <span className="text-[#dc2626]">*</span>
                 </label>
                 <input
                   id="qtdeHoras"
                   type="number"
                   min={1}
                   max={999}
+                  required
                   value={qtdeHoras}
                   onChange={(e) => setQtdeHoras(e.target.value)}
                   placeholder="Ex: 4"
@@ -284,7 +285,7 @@ export default function NovoCertificadoPage() {
 
               <button
                 type="submit"
-                disabled={enviando || !voluntario || !atividade}
+                disabled={enviando || !voluntario || !atividade || !qtdeHoras}
                 className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-[#1d4ed8] px-6 py-[14px] text-[15px] font-semibold text-white transition-colors hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {enviando ? (

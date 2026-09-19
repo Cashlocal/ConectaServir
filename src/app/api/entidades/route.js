@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const TABLE_ENTIDADES = "tblPIOP4H76gOOPSe";
+const TABLE_ENTIDADES = process.env.AIRTABLE_TABLE_ENTIDADES ?? "tblPIOP4H76gOOPSe";
 
 export async function GET() {
   const apiKey = process.env.AIRTABLE_API_KEY;
