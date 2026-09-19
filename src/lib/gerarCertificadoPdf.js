@@ -132,20 +132,21 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, da
   });
 
   // ── SUBTÍTULO "DE RECONHECIMENTO" centralizado entre os traços ────────────
+  // As linhas são posicionadas como proporção da largura da página para
+  // garantir simetria perfeita, independente da largura renderizada do texto.
   const subSize = 11;
   const subCS   = 2.5;
   const subText = "DE RECONHECIMENTO";
-  const lineLen = 70;
-  const lineGap = 10;
-  const subTextW = bold.widthOfTextAtSize(subText, subSize) + subCS * (subText.length - 1);
-  const totalSubW = lineLen + lineGap + subTextW + lineGap + lineLen;
-  const blockStartX = (width - totalSubW) / 2;
-  const subX = blockStartX + lineLen + lineGap;
-  const subY = titleY - 26;
+  const subY    = titleY - 26;
 
-  page.drawLine({ start: { x: blockStartX,               y: subY + 4 }, end: { x: blockStartX + lineLen,     y: subY + 4 }, thickness: 0.7, color: OURO });
-  page.drawLine({ start: { x: subX + subTextW + lineGap, y: subY + 4 }, end: { x: subX + subTextW + lineGap + lineLen, y: subY + 4 }, thickness: 0.7, color: OURO });
-  page.drawText(subText, { x: subX, y: subY, size: subSize, font: bold, color: OURO, characterSpacing: subCS });
+  const subLX1 = width * 0.310;   // início da linha esquerda
+  const subLX2 = width * 0.398;   // fim da linha esquerda (borda interna)
+  const subRX1 = width * 0.602;   // início da linha direita (borda interna)
+  const subRX2 = width * 0.690;   // fim da linha direita
+
+  page.drawLine({ start: { x: subLX1, y: subY + 4 }, end: { x: subLX2, y: subY + 4 }, thickness: 0.7, color: OURO });
+  page.drawLine({ start: { x: subRX1, y: subY + 4 }, end: { x: subRX2, y: subY + 4 }, thickness: 0.7, color: OURO });
+  page.drawText(subText, { x: cx(subText, bold, subSize, width, subCS), y: subY, size: subSize, font: bold, color: OURO, characterSpacing: subCS });
 
   // ── TEXTO INTRODUTÓRIO ─────────────────────────────────────────────────────
   const introSize = 10.5;
