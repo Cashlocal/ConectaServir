@@ -13,11 +13,11 @@ const OURO        = rgb(0.784, 0.639, 0.082);
 
 /**
  * Centraliza texto horizontalmente considerando character spacing.
+ * Usa (length-1) porque o espaço após o último caractere não tem
+ * conteúdo visual e não deve ser incluído na largura visual.
  */
 function cx(text, font, size, pageWidth, charSpacing = 0) {
-  // pdf-lib aplica characterSpacing após CADA caractere (incluindo o último),
-  // por isso usamos text.length para o cálculo de centralização ficar preciso.
-  const w = font.widthOfTextAtSize(text, size) + charSpacing * text.length;
+  const w = font.widthOfTextAtSize(text, size) + charSpacing * (text.length - 1);
   return (pageWidth - w) / 2;
 }
 
@@ -116,7 +116,14 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, en
   const logoY = height - B1 - 14 - logoH;
   if (rotaryImg) {
     const d = rotaryImg.scale(logoH / rotaryImg.height);
-    page.drawImage(rotaryImg, { x: (width - d.width) / 2, y: logoY, width: d.width, height: logoH });
+    // O PNG tem conteúdo de x=7 até x=767 num total de 1064px:
+    // centro visual = 387px vs. centro da imagem = 532px → offset = -145px
+    // Deslocamos o logo para compensar o espaço vazio à direita do PNG.
+    const contentCxPx = (7 + 767) / 2;          // 387 px
+    const imgCxPx     = 1064 / 2;                // 532 px
+    const offsetPt    = (imgCxPx - contentCxPx) / 1064 * d.width; // +24.9 pt
+    const logoX       = (width - d.width) / 2 + offsetPt;
+    page.drawImage(rotaryImg, { x: logoX, y: logoY, width: d.width, height: logoH });
   }
 
   // ── TÍTULO "CERTIFICADO" ───────────────────────────────────────────────────
