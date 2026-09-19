@@ -110,42 +110,40 @@ export function Navbar() {
             className="hidden items-center gap-8 md:col-start-3 md:row-start-1 md:flex md:justify-self-end"
             aria-label="Principal"
           >
+            {links.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className="whitespace-nowrap rounded-md px-1 py-0.5 text-[15px] font-medium text-[#0f172a] no-underline decoration-[#1a44a6] decoration-2 underline-offset-4 transition-all duration-200 hover:text-[#1a44a6] hover:underline"
+              >
+                {label}
+              </Link>
+            ))}
             {!usuario ? (
-              <>
-                {links.map(({ href, label }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    className="whitespace-nowrap rounded-md px-1 py-0.5 text-[15px] font-medium text-[#0f172a] no-underline decoration-[#1a44a6] decoration-2 underline-offset-4 transition-all duration-200 hover:text-[#1a44a6] hover:underline"
-                  >
-                    {label}
-                  </Link>
-                ))}
-                <Link
-                  href="/login"
-                  className="ml-2 inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-[#1a44a6] px-4 py-2 text-[14px] font-semibold text-white transition-colors duration-200 hover:bg-[#153575]"
+              <Link
+                href="/login"
+                className="ml-2 inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-[#1a44a6] px-4 py-2 text-[14px] font-semibold text-white transition-colors duration-200 hover:bg-[#153575]"
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
                 >
-                  <svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                    <polyline points="10 17 15 12 10 7" />
-                    <line x1="15" y1="12" x2="3" y2="12" />
-                  </svg>
-                  Login
-                </Link>
-              </>
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                  <polyline points="10 17 15 12 10 7" />
+                  <line x1="15" y1="12" x2="3" y2="12" />
+                </svg>
+                Login
+              </Link>
             ) : (
               /* Avatar + dropdown */
-              <div className="relative" ref={dropdownRef}>
+              <div className="relative ml-2" ref={dropdownRef}>
                 <button
                   type="button"
                   onClick={() => setDropdownOpen((v) => !v)}
