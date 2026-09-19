@@ -21,6 +21,7 @@ export default function VoluntariosAdminPage() {
   const [pronto, setPronto]             = useState(false);
   const [voluntarios, setVoluntarios]   = useState<Voluntario[]>([]);
   const [carregando, setCarregando]     = useState(true);
+  const [busca, setBusca]               = useState("");
   const [modal, setModal]               = useState<ModalState>(null);
   const [salvando, setSalvando]         = useState(false);
   const [toggling, setToggling]         = useState<string | null>(null); // id sendo toggleado
@@ -144,6 +145,16 @@ export default function VoluntariosAdminPage() {
 
   if (!pronto) return null;
 
+  const q = busca.toLowerCase();
+  const filtrados = q
+    ? voluntarios.filter(
+        (v) =>
+          v.nome.toLowerCase().includes(q) ||
+          v.email.toLowerCase().includes(q) ||
+          v.telefone.toLowerCase().includes(q)
+      )
+    : voluntarios;
+
   const inputClass =
     "w-full rounded-xl border border-[#bfdbfe] bg-[#f8faff] px-4 py-3 text-[15px] text-[#0f172a] placeholder-[#94a3b8] outline-none transition-all [border-width:0.5px] focus:border-[#1a44a6] focus:bg-white focus:ring-2 focus:ring-[#1a44a6]/15";
 
@@ -174,7 +185,30 @@ export default function VoluntariosAdminPage() {
         </button>
       </div>
 
-      {/* Tabela */}
+      {/* Campo de busca */}
+      <div className="relative mb-4">
+        <svg className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#94a3b8]"
+          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input
+          type="text"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          placeholder="Buscar por nome, email ou telefone..."
+          className="w-full rounded-xl border border-[#bfdbfe] bg-white py-3 pl-11 pr-10 text-[14px] text-[#0f172a] placeholder-[#94a3b8] outline-none [border-width:0.5px] focus:border-[#1a44a6] focus:ring-2 focus:ring-[#1a44a6]/15"
+        />
+        {busca && (
+          <button type="button" onClick={() => setBusca("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-[#94a3b8] hover:text-[#475569]"
+            aria-label="Limpar busca">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        )}
+      </div>
+
       <div className="overflow-hidden rounded-2xl border border-[#bfdbfe] bg-white shadow-[0_4px_24px_rgba(29,78,216,0.07)] [border-width:0.5px]">
         {carregando ? (
           <div className="flex items-center justify-center py-20 text-[#94a3b8]">
@@ -184,15 +218,17 @@ export default function VoluntariosAdminPage() {
             </svg>
             Carregando voluntários...
           </div>
-        ) : voluntarios.length === 0 ? (
+        ) : filtrados.length === 0 ? (
           <div className="py-20 text-center">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#dbeafe]">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
               </svg>
             </div>
-            <p className="text-[15px] font-medium text-[#1e3a8a]">Nenhum voluntário cadastrado</p>
-            <p className="mt-1 text-sm text-[#94a3b8]">Clique em "Novo Voluntário" para começar.</p>
+            <p className="text-[15px] font-medium text-[#1e3a8a]">
+              {busca ? "Nenhum voluntário encontrado para essa busca" : "Nenhum voluntário cadastrado"}
+            </p>
+            {!busca && <p className="mt-1 text-sm text-[#94a3b8]">Clique em "Novo Voluntário" para começar.</p>}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -207,7 +243,7 @@ export default function VoluntariosAdminPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f1f5f9]">
-                {voluntarios.map((v) => (
+                {filtrados.map((v) => (
                   <tr key={v.id} className="transition-colors hover:bg-[#f8faff]">
                     <td className="px-6 py-4 font-medium text-[#1e3a8a]">{v.nome}</td>
                     <td className="px-6 py-4 text-[#475569]">{v.email || <span className="text-[#cbd5e1]">—</span>}</td>
