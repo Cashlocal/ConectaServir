@@ -15,7 +15,9 @@ const OURO        = rgb(0.784, 0.639, 0.082);
  * Centraliza texto horizontalmente considerando character spacing.
  */
 function cx(text, font, size, pageWidth, charSpacing = 0) {
-  const w = font.widthOfTextAtSize(text, size) + charSpacing * (text.length - 1);
+  // pdf-lib aplica characterSpacing após CADA caractere (incluindo o último),
+  // por isso usamos text.length para o cálculo de centralização ficar preciso.
+  const w = font.widthOfTextAtSize(text, size) + charSpacing * text.length;
   return (pageWidth - w) / 2;
 }
 
