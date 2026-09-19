@@ -4,36 +4,25 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 const MESES = [
-  "Janeiro",
-  "Fevereiro",
-  "Março",
-  "Abril",
-  "Maio",
-  "Junho",
-  "Julho",
-  "Agosto",
-  "Setembro",
-  "Outubro",
-  "Novembro",
-  "Dezembro",
+  "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+  "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro",
 ];
 
 const MESES_ABREV = [
-  "JAN",
-  "FEV",
-  "MAR",
-  "ABR",
-  "MAI",
-  "JUN",
-  "JUL",
-  "AGO",
-  "SET",
-  "OUT",
-  "NOV",
-  "DEZ",
+  "JAN","FEV","MAR","ABR","MAI","JUN",
+  "JUL","AGO","SET","OUT","NOV","DEZ",
 ];
 
-const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const DIAS_SEMANA = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+
+const GRADIENTS = [
+  "from-[#1e3a8a] to-[#1d4ed8]",
+  "from-[#065f46] to-[#059669]",
+  "from-[#7c2d12] to-[#ea580c]",
+  "from-[#4c1d95] to-[#7c3aed]",
+  "from-[#0c4a6e] to-[#0ea5e9]",
+  "from-[#831843] to-[#ec4899]",
+];
 
 function parseEventoData(iso) {
   if (!iso) return null;
@@ -45,28 +34,19 @@ function parseEventoData(iso) {
     ano: d.getUTCFullYear(),
     hora: String(d.getUTCHours()).padStart(2, "0"),
     min: String(d.getUTCMinutes()).padStart(2, "0"),
+    diaSemana: d.getUTCDay(),
   };
 }
 
 function utcToday() {
   const n = new Date();
-  return {
-    dia: n.getUTCDate(),
-    mes: n.getUTCMonth(),
-    ano: n.getUTCFullYear(),
-  };
+  return { dia: n.getUTCDate(), mes: n.getUTCMonth(), ano: n.getUTCFullYear() };
 }
 
 function utcTomorrow() {
   const n = new Date();
-  const t = new Date(
-    Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate() + 1)
-  );
-  return {
-    dia: t.getUTCDate(),
-    mes: t.getUTCMonth(),
-    ano: t.getUTCFullYear(),
-  };
+  const t = new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate() + 1));
+  return { dia: t.getUTCDate(), mes: t.getUTCMonth(), ano: t.getUTCFullYear() };
 }
 
 function mesmoDiaUtc(a, b) {
@@ -78,32 +58,22 @@ function buildCalendarCells(year, month) {
   const startPad = first.getUTCDay();
   const dim = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
   const daysInPrev = new Date(Date.UTC(year, month, 0)).getUTCDate();
-
   const cells = [];
-
   for (let i = 0; i < startPad; i++) {
     const day = daysInPrev - startPad + i + 1;
     const pm = month === 0 ? 11 : month - 1;
     const py = month === 0 ? year - 1 : year;
     cells.push({ day, month: pm, year: py, isCurrentMonth: false });
   }
-
   for (let d = 1; d <= dim; d++) {
     cells.push({ day: d, month, year, isCurrentMonth: true });
   }
-
   let nextDay = 1;
   const nm = month === 11 ? 0 : month + 1;
   const ny = month === 11 ? year + 1 : year;
   while (cells.length % 7 !== 0) {
-    cells.push({
-      day: nextDay++,
-      month: nm,
-      year: ny,
-      isCurrentMonth: false,
-    });
+    cells.push({ day: nextDay++, month: nm, year: ny, isCurrentMonth: false });
   }
-
   return cells;
 }
 
@@ -119,9 +89,7 @@ export default function EventosPage() {
     try {
       const raw = localStorage.getItem("usuario");
       if (raw) setUsuarioLogado(true);
-    } catch {
-      // localStorage indisponível — ignora
-    }
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -130,18 +98,15 @@ export default function EventosPage() {
       try {
         const res = await fetch("/api/eventos");
         const data = await res.json();
-        const raw = data.error ? [] : data.records;
-        const list = Array.isArray(raw) ? raw : [];
-        if (!cancelled) setEventos(list);
+        const raw = data.error ? [] : data.records ?? data;
+        if (!cancelled) setEventos(Array.isArray(raw) ? raw : []);
       } catch {
         if (!cancelled) setEventos([]);
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   const eventosPorDia = useMemo(() => {
@@ -156,38 +121,25 @@ export default function EventosPage() {
     return map;
   }, [eventos]);
 
-  const eventosDoMes = useMemo(() => {
-    return eventos.filter((ev) => {
+  const eventosDoMes = useMemo(() =>
+    eventos.filter((ev) => {
       const p = parseEventoData(ev.data);
-      if (!p) return false;
-      return p.mes === mesIdx && p.ano === anoIdx;
-    });
-  }, [eventos, mesIdx, anoIdx]);
-
-  const cells = useMemo(
-    () => buildCalendarCells(anoIdx, mesIdx),
-    [anoIdx, mesIdx]
+      return p && p.mes === mesIdx && p.ano === anoIdx;
+    }),
+    [eventos, mesIdx, anoIdx]
   );
 
+  const cells = useMemo(() => buildCalendarCells(anoIdx, mesIdx), [anoIdx, mesIdx]);
   const hoje = utcToday();
   const amanha = utcTomorrow();
 
   function prevMonth() {
-    if (mesIdx === 0) {
-      setMesIdx(11);
-      setAnoIdx((y) => y - 1);
-    } else {
-      setMesIdx((m) => m - 1);
-    }
+    if (mesIdx === 0) { setMesIdx(11); setAnoIdx((y) => y - 1); }
+    else setMesIdx((m) => m - 1);
   }
-
   function nextMonth() {
-    if (mesIdx === 11) {
-      setMesIdx(0);
-      setAnoIdx((y) => y + 1);
-    } else {
-      setMesIdx((m) => m + 1);
-    }
+    if (mesIdx === 11) { setMesIdx(0); setAnoIdx((y) => y + 1); }
+    else setMesIdx((m) => m + 1);
   }
 
   function badgePara(ev) {
@@ -199,18 +151,24 @@ export default function EventosPage() {
   }
 
   return (
-    <main className="bg-[#eff6ff] px-6 py-12 md:px-16 md:py-[48px]">
+    <main className="min-h-[calc(100vh-120px)] bg-[#eff6ff] px-6 py-12 md:px-16 md:py-[48px]">
+      {/* Cabeçalho */}
       <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <h1
-          className="text-center text-[40px] font-bold leading-tight text-[#1e3a8a] md:text-left"
-          style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}
-        >
-          Calendário de Eventos
-        </h1>
+        <div>
+          <h1
+            className="text-[32px] font-bold leading-tight text-[#1e3a8a] md:text-[40px]"
+            style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}
+          >
+            Calendário de Eventos
+          </h1>
+          <p className="mt-2 text-base text-[#475569]">
+            Acompanhe as atividades e iniciativas do clube
+          </p>
+        </div>
         {usuarioLogado && (
           <Link
             href="/eventos-admin"
-            className="inline-flex items-center gap-2 self-center rounded-xl bg-[#1d4ed8] px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#1e40af] sm:self-start sm:mt-2"
+            className="inline-flex items-center gap-2 self-start rounded-xl bg-[#1d4ed8] px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#1e40af] sm:mt-2"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
@@ -219,173 +177,168 @@ export default function EventosPage() {
           </Link>
         )}
       </div>
-      <p className="mb-8 mt-2 text-center text-base text-[#475569] md:mb-8 md:text-left">
-        Acompanhe as atividades e iniciativas do clube
-      </p>
 
-      {/* Mini calendário */}
-      <div className="mx-auto max-w-[480px] rounded-2xl border border-[#bfdbfe] bg-white p-5 [border-width:0.5px]">
-        <div className="mb-4 flex items-center justify-between">
-          <span className="text-base font-semibold text-[#1e3a8a]">
-            {MESES[mesIdx]} {anoIdx}
-          </span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={prevMonth}
-              className="rounded-lg border border-[#bfdbfe] px-3 py-1 text-sm text-[#475569] [border-width:0.5px] transition-colors hover:bg-[#eff6ff]"
-              aria-label="Mês anterior"
-            >
-              ←
-            </button>
-            <button
-              type="button"
-              onClick={nextMonth}
-              className="rounded-lg border border-[#bfdbfe] px-3 py-1 text-sm text-[#475569] [border-width:0.5px] transition-colors hover:bg-[#eff6ff]"
-              aria-label="Próximo mês"
-            >
-              →
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-7 gap-0">
-          {DIAS_SEMANA.map((d) => (
-            <div
-              key={d}
-              className="py-1.5 text-center text-xs text-[#94a3b8]"
-            >
-              {d}
+      <div className="mt-8 flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10">
+        {/* Coluna esquerda: mini calendário */}
+        <div className="shrink-0 lg:w-[320px]">
+          <div className="rounded-2xl border border-[#bfdbfe] bg-white p-5 shadow-[0_4px_20px_rgba(29,78,216,0.07)] [border-width:0.5px]">
+            <div className="mb-4 flex items-center justify-between">
+              <span className="text-base font-semibold text-[#1e3a8a]">
+                {MESES[mesIdx]} {anoIdx}
+              </span>
+              <div className="flex gap-2">
+                <button type="button" onClick={prevMonth}
+                  className="rounded-lg border border-[#bfdbfe] px-3 py-1 text-sm text-[#475569] [border-width:0.5px] transition-colors hover:bg-[#eff6ff]"
+                  aria-label="Mês anterior">←</button>
+                <button type="button" onClick={nextMonth}
+                  className="rounded-lg border border-[#bfdbfe] px-3 py-1 text-sm text-[#475569] [border-width:0.5px] transition-colors hover:bg-[#eff6ff]"
+                  aria-label="Próximo mês">→</button>
+              </div>
             </div>
-          ))}
-          {cells.map((cell, i) => {
-            const key = `${cell.year}-${cell.month}-${cell.day}`;
-            const tem = eventosPorDia.has(key);
-            const isToday =
-              cell.day === hoje.dia &&
-              cell.month === hoje.mes &&
-              cell.year === hoje.ano;
-            const isCurrent = cell.isCurrentMonth;
 
-            return (
-              <div
-                key={`${key}-${i}`}
-                className={`relative flex min-h-[36px] flex-col items-center justify-center rounded-md py-1.5 text-center text-[13px] ${
-                  !isCurrent ? "text-[#cbd5e1]" : "text-[#0f172a]"
-                } ${
-                  isToday
-                    ? "bg-[#1d4ed8] font-semibold text-white"
-                    : tem && isCurrent
-                      ? "cursor-pointer font-semibold text-[#1d4ed8] hover:bg-[#eff6ff]"
-                      : "cursor-default"
-                } `}
-              >
-                <span>{cell.day}</span>
-                {tem && isCurrent && !isToday ? (
-                  <span className="mt-0.5 h-1 w-1 rounded-full bg-[#1d4ed8]" />
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Lista */}
-      <div className="mx-auto mt-6 max-w-[480px]">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.06em] text-[#94a3b8]">
-          Eventos de {MESES[mesIdx]}
-        </p>
-
-        {loading ? (
-          <div className="space-y-3">
-            {[0, 1, 2].map((k) => (
-              <div
-                key={k}
-                className="h-20 rounded-2xl bg-[#dbeafe] opacity-60"
-                style={{
-                  animation: "eventosSkel 1.2s ease-in-out infinite",
-                }}
-              />
-            ))}
-            <style>{`
-              @keyframes eventosSkel {
-                0%, 100% { opacity: 0.5; }
-                50% { opacity: 1; }
-              }
-            `}</style>
-          </div>
-        ) : eventosDoMes.length === 0 ? (
-          <p className="py-8 text-center text-[15px] text-[#94a3b8]">
-            Nenhum evento este mês.
-          </p>
-        ) : (
-          eventosDoMes.map((ev) => {
-            const p = parseEventoData(ev.data);
-            const horario = p ? `${p.hora}:${p.min}` : "";
-            const badge = badgePara(ev);
-            const isEvToday = badge === "hoje";
-
-            return (
-              <div
-                key={ev.id}
-                className="mb-2.5 flex gap-4 rounded-2xl border border-[#e2e8f0] bg-white px-4 py-3.5 transition-all [border-width:0.5px] last:mb-0 hover:border-[#bfdbfe] hover:shadow-[0_2px_12px_rgba(29,78,216,0.06)] md:p-5"
-              >
-                {ev.banner ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={ev.banner}
-                    alt={ev.nome}
-                    className="h-16 w-16 rounded-[10px] object-cover shrink-0"
-                  />
-                ) : (
-                  <div
-                    className={`flex w-11 shrink-0 flex-col items-center justify-center rounded-[10px] border border-[#93c5fd] px-1.5 py-2 text-center [border-width:0.5px] md:w-[52px] ${
-                      isEvToday
-                        ? "bg-[#1d4ed8] [&_span]:text-white"
-                        : "bg-[#eff6ff]"
-                    }`}
+            <div className="grid grid-cols-7 gap-0">
+              {DIAS_SEMANA.map((d) => (
+                <div key={d} className="py-1.5 text-center text-xs text-[#94a3b8]">{d}</div>
+              ))}
+              {cells.map((cell, i) => {
+                const key = `${cell.year}-${cell.month}-${cell.day}`;
+                const tem = eventosPorDia.has(key);
+                const isToday = cell.day === hoje.dia && cell.month === hoje.mes && cell.year === hoje.ano;
+                const isCurrent = cell.isCurrentMonth;
+                return (
+                  <div key={`${key}-${i}`}
+                    className={`relative flex min-h-[36px] flex-col items-center justify-center rounded-md py-1.5 text-center text-[13px]
+                      ${!isCurrent ? "text-[#cbd5e1]" : "text-[#0f172a]"}
+                      ${isToday ? "bg-[#1d4ed8] font-semibold text-white" :
+                        tem && isCurrent ? "cursor-pointer font-semibold text-[#1d4ed8] hover:bg-[#eff6ff]" : "cursor-default"}`}
                   >
-                    <span
-                      className={`text-xl font-semibold leading-none text-[#1d4ed8] md:text-2xl ${
-                        isEvToday ? "!text-white" : ""
-                      }`}
-                    >
-                      {p?.dia}
-                    </span>
-                    <span
-                      className={`mt-1 text-[10px] font-medium uppercase text-[#1d4ed8] md:text-[11px] ${
-                        isEvToday ? "!text-white" : ""
-                      }`}
-                    >
-                      {p != null ? MESES_ABREV[p.mes] : ""}
-                    </span>
+                    <span>{cell.day}</span>
+                    {tem && isCurrent && !isToday && (
+                      <span className="mt-0.5 h-1 w-1 rounded-full bg-[#1d4ed8]" />
+                    )}
                   </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-[15px] font-semibold text-[#1e3a8a]">
-                      {ev.nome}
-                    </h2>
-                    {badge === "hoje" ? (
-                      <span className="ml-2 rounded-full bg-[#dbeafe] px-2 py-0.5 text-[11px] text-[#1d4ed8]">
-                        Hoje
-                      </span>
-                    ) : null}
-                    {badge === "amanha" ? (
-                      <span className="ml-2 rounded-full bg-[#fef3c7] px-2 py-0.5 text-[11px] text-[#d97706]">
-                        Amanhã
-                      </span>
-                    ) : null}
-                  </div>
-                  <p className="mt-1 text-[13px] text-[#475569]">{horario}</p>
-                  <p className="mt-1.5 line-clamp-2 text-[13px] leading-[1.5] text-[#94a3b8]">
-                    {ev.descricao}
-                  </p>
-                </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Legenda do mês */}
+          <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#94a3b8]">
+            {eventosDoMes.length} evento{eventosDoMes.length !== 1 ? "s" : ""} em {MESES[mesIdx]}
+          </p>
+        </div>
+
+        {/* Coluna direita: grid de cards */}
+        <div className="flex-1">
+          <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#94a3b8]">
+            Eventos de {MESES[mesIdx]}
+          </p>
+
+          {loading ? (
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {[0, 1, 2, 3].map((k) => (
+                <div key={k} className="h-64 rounded-2xl bg-[#dbeafe] opacity-60"
+                  style={{ animation: "eventosSkel 1.2s ease-in-out infinite" }} />
+              ))}
+              <style>{`@keyframes eventosSkel { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }`}</style>
+            </div>
+          ) : eventosDoMes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-[#bfdbfe] bg-white py-20 [border-width:0.5px]">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#dbeafe]">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
               </div>
-            );
-          })
-        )}
+              <p className="text-[15px] font-medium text-[#1e3a8a]">Nenhum evento este mês</p>
+              <p className="mt-1 text-sm text-[#94a3b8]">Navegue pelos meses para ver outros eventos.</p>
+            </div>
+          ) : (
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              {eventosDoMes.map((ev, idx) => {
+                const p = parseEventoData(ev.data);
+                const horario = p ? `${p.hora}:${p.min}` : "";
+                const badge = badgePara(ev);
+                const gradient = GRADIENTS[idx % GRADIENTS.length];
+
+                return (
+                  <div key={ev.id}
+                    className="group overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-[0_2px_12px_rgba(29,78,216,0.07)] transition-all duration-200 [border-width:0.5px] hover:-translate-y-1 hover:shadow-[0_8px_32px_rgba(29,78,216,0.14)]"
+                  >
+                    {/* Imagem / placeholder */}
+                    <div className="relative aspect-[16/9] w-full overflow-hidden">
+                      {ev.banner ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={ev.banner}
+                          alt={ev.nome}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className={`flex h-full w-full flex-col items-center justify-center bg-gradient-to-br ${gradient}`}>
+                          <span className="text-5xl font-bold leading-none text-white/90">
+                            {p?.dia}
+                          </span>
+                          <span className="mt-1 text-[13px] font-semibold uppercase tracking-widest text-white/70">
+                            {p != null ? MESES_ABREV[p.mes] : ""}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Badge hoje / amanhã */}
+                      {badge && (
+                        <span className={`absolute right-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-semibold shadow
+                          ${badge === "hoje" ? "bg-[#1d4ed8] text-white" : "bg-[#fef3c7] text-[#d97706]"}`}>
+                          {badge === "hoje" ? "Hoje" : "Amanhã"}
+                        </span>
+                      )}
+
+                      {/* Data sobreposta quando tem banner */}
+                      {ev.banner && p && (
+                        <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-lg bg-black/50 px-2.5 py-1 backdrop-blur-sm">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                          </svg>
+                          <span className="text-[11px] font-medium text-white">
+                            {p.dia} {MESES_ABREV[p.mes]}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Conteúdo */}
+                    <div className="p-4">
+                      <h2 className="line-clamp-1 text-[15px] font-semibold text-[#1e3a8a]">
+                        {ev.nome}
+                      </h2>
+
+                      <div className="mt-2 flex items-center gap-1.5 text-[13px] text-[#475569]">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        <span>{horario || "—"}</span>
+                        {p && (
+                          <>
+                            <span className="text-[#cbd5e1]">·</span>
+                            <span>{DIAS_SEMANA[p.diaSemana]}, {p.dia} {MESES_ABREV[p.mes]}</span>
+                          </>
+                        )}
+                      </div>
+
+                      {ev.descricao && (
+                        <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-[#94a3b8]">
+                          {ev.descricao}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );
