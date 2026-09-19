@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
 
+const TABLE_ENTIDADES = "tblPIOP4H76gOOPSe";
+
 export async function GET() {
   try {
     const apiKey = process.env.AIRTABLE_API_KEY;
     const baseId = process.env.AIRTABLE_BASE_ID;
     const table = process.env.AIRTABLE_TABLE_CERTIFICADOS;
 
-    if (!apiKey || !baseId || !table) {
-      return NextResponse.json([]);
-    }
+    if (!apiKey || !baseId || !table) return NextResponse.json([]);
 
     const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}?sort[0][field]=Voluntario&sort[0][direction]=asc`;
-
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${apiKey}` },
       cache: "no-store",
@@ -22,14 +21,13 @@ export async function GET() {
     const data = await res.json();
     const records = (data.records ?? []).map((r) => {
       const anexos = r.fields["Certificado gerado"];
-      const arquivoUrl = Array.isArray(anexos) && anexos.length > 0
-        ? anexos[0].url
-        : null;
+      const arquivoUrl = Array.isArray(anexos) && anexos.length > 0 ? anexos[0].url : null;
       return {
         id: r.id,
         voluntario: r.fields["Voluntario"] ?? "",
         qtdeHoras: r.fields["Qtde Horas"] ?? 0,
         atividade: r.fields["Atividade"] ?? "",
+        entidadeId: Array.isArray(r.fields["Entidade"]) ? r.fields["Entidade"][0] : null,
         status: r.fields["Status"] ?? "Pendente",
         arquivoUrl,
       };
@@ -43,13 +41,10 @@ export async function GET() {
 
 export async function POST(req) {
   try {
-    const { voluntario, qtdeHoras, atividade } = await req.json();
+    const { voluntario, qtdeHoras, atividade, entidadeId } = await req.json();
 
-    if (!voluntario || !qtdeHoras || !atividade) {
-      return NextResponse.json(
-        { error: "Todos os campos são obrigatórios." },
-        { status: 400 }
-      );
+    if (!voluntario || !atividade) {
+      return NextResponse.json({ error: "Campos obrigatórios faltando." }, { status: 400 });
     }
 
     const apiKey = process.env.AIRTABLE_API_KEY;
@@ -57,43 +52,51 @@ export async function POST(req) {
     const table = process.env.AIRTABLE_TABLE_CERTIFICADOS;
 
     if (!apiKey || !baseId || !table) {
-      return NextResponse.json(
-        { error: "Configuração do servidor incompleta." },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Configuração do servidor incompleta." }, { status: 500 });
     }
 
-    const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}`;
+    const fields = {
+      Voluntario: voluntario,
+      "Qtde Horas": Number(qtdeHoras) || 0,
+      Atividade: atividade,
+      Status: "Pendente",
+    };
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        fields: {
-          Voluntario: voluntario,
-          "Qtde Horas": Number(qtdeHoras),
-          Atividade: atividade,
-          Status: "Pendente",
-        },
-      }),
-    });
+    if (entidadeId) {
+      fields["Entidade"] = [entidadeId];
+    }
+
+    const res = await fetch(
+      `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ fields }),
+      }
+    );
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return NextResponse.json(
-        { error: err?.error?.message ?? "Erro ao salvar." },
-        { status: 502 }
-      );
+      return NextResponse.json({ error: err?.error?.message ?? "Erro ao salvar." }, { status: 502 });
     }
 
     return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json(
-      { error: "Erro inesperado. Tente novamente." },
-      { status: 500 }
+    return NextResponse.json({ error: "Erro inesperado. Tente novamente." }, { status: 500 });
+  }
+}
+
+/** Busca o nome de uma entidade pelo ID de registro */
+export async function buscarNomeEntidade(apiKey, baseId, recordId) {
+  try {
+    const res = await fetch(
+      `https://api.airtable.com/v0/${baseId}/${TABLE_ENTIDADES}/${recordId}`,
+      { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" }
     );
+    if (!res.ok) return "";
+    const data = await res.json();
+    return data.fields?.["Nome"] ?? "";
+  } catch {
+    return "";
   }
 }

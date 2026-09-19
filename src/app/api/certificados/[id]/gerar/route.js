@@ -3,6 +3,22 @@ import { gerarCertificadoPdf } from "@/lib/gerarCertificadoPdf";
 
 export const runtime = "nodejs";
 
+const TABLE_ENTIDADES = "tblPIOP4H76gOOPSe";
+
+async function buscarNomeEntidade(apiKey, baseId, recordId) {
+  try {
+    const res = await fetch(
+      `https://api.airtable.com/v0/${baseId}/${TABLE_ENTIDADES}/${recordId}`,
+      { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" }
+    );
+    if (!res.ok) return "";
+    const data = await res.json();
+    return data.fields?.["Nome"] ?? "";
+  } catch {
+    return "";
+  }
+}
+
 export async function POST(req, { params }) {
   const { id: recordId } = await params;
 
@@ -15,7 +31,6 @@ export async function POST(req, { params }) {
   }
 
   try {
-    // 1. Buscar dados do registro
     const recRes = await fetch(
       `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}/${recordId}`,
       { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" }
@@ -23,6 +38,7 @@ export async function POST(req, { params }) {
     if (!recRes.ok) {
       return NextResponse.json({ error: "Registro não encontrado." }, { status: 404 });
     }
+
     const rec = await recRes.json();
     const voluntario  = rec.fields["Voluntario"] ?? "";
     const qtdeHoras   = rec.fields["Qtde Horas"] ?? 0;
@@ -31,25 +47,24 @@ export async function POST(req, { params }) {
       day: "2-digit", month: "long", year: "numeric",
     });
 
-    // 2. Gerar PDF (valida que funciona antes de salvar)
-    const pdfBuffer = await gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, dataEmissao });
+    // Buscar nome da entidade vinculada
+    const entidadeIds = rec.fields["Entidade"];
+    const entidade = Array.isArray(entidadeIds) && entidadeIds.length > 0
+      ? await buscarNomeEntidade(apiKey, baseId, entidadeIds[0])
+      : "";
+
+    const pdfBuffer = await gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, entidade, dataEmissao });
     const filename = `certificado-${voluntario.replace(/\s+/g, "-").toLowerCase()}.pdf`;
 
-    // 3. Determinar a URL pública do endpoint de PDF
-    const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
+    const host  = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
     const proto = req.headers.get("x-forwarded-proto") ?? "https";
     const pdfUrl = `${proto}://${host}/api/certificados/${recordId}/pdf`;
 
-    // 4. PATCH no Airtable: salva a URL do PDF no campo de anexo e muda status
-    //    O Airtable baixa e armazena o arquivo automaticamente ao receber a URL
     const patchRes = await fetch(
       `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}/${recordId}`,
       {
         method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           fields: {
             "Certificado gerado": [{ url: pdfUrl, filename }],
@@ -68,16 +83,13 @@ export async function POST(req, { params }) {
       );
     }
 
-    // 5. Se o Airtable não armazenou o arquivo via URL (campo ainda vazio),
-    //    retornar o buffer para o cliente salvar via download direto
-    const patchData = await patchRes.json();
-    const anexos = patchData.fields?.["Certificado gerado"];
+    const patchData  = await patchRes.json();
+    const anexos     = patchData.fields?.["Certificado gerado"];
     const arquivoSalvo = Array.isArray(anexos) && anexos.length > 0;
 
     return NextResponse.json({
       success: true,
       arquivoSalvo,
-      // Retorna o PDF em base64 para fallback de download no cliente
       pdfBase64: arquivoSalvo ? null : Buffer.from(pdfBuffer).toString("base64"),
       filename,
     });

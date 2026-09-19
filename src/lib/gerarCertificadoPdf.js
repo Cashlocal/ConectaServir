@@ -36,7 +36,7 @@ function wrapText(text, font, size, maxWidth) {
   return lines;
 }
 
-export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, dataEmissao }) {
+export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, entidade, dataEmissao }) {
   const pdfDoc = await PDFDocument.create();
 
   // A4 paisagem
@@ -150,10 +150,9 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, da
 
   // ── TEXTO INTRODUTÓRIO ─────────────────────────────────────────────────────
   const introSize = 10.5;
-  const introText = "o Rotary Club de Pato Branco tem a honra de reconhecer o talento e dedicação de";
+  const introText = "o Rotary Club de Pato Branco certifica a participação de";
   const introY    = subY - 30;
   page.drawText(introText, { x: cx(introText, regular, introSize, width), y: introY, size: introSize, font: regular, color: AZUL_TITULO });
-
   // ── NOME (FONTE SCRIPT) ────────────────────────────────────────────────────
   const nameSize = 46;
   const nameY    = introY - 52;
@@ -177,8 +176,8 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, da
 
   let bodyY = underlineY - 27;
 
-  // "pela participação no"
-  const intro2 = "pela participação no";
+  // "na atividade"
+  const intro2 = "na atividade";
   page.drawText(intro2, { x: cx(intro2, regular, bodySize, width), y: bodyY, size: bodySize, font: regular, color: AZUL_TITULO });
 
   // Nome da atividade em negrito
@@ -188,26 +187,30 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, da
     page.drawText(line, { x: cx(line, bold, bodySize + 0.5, width), y: bodyY, size: bodySize + 0.5, font: bold, color: AZUL_TITULO });
   }
 
-  // Horas (exibido apenas quando preenchido)
+  // Entidade (exibida apenas quando preenchida)
+  if (entidade) {
+    const entLabel = "na entidade";
+    bodyY -= bodyLineH;
+    page.drawText(entLabel, { x: cx(entLabel, regular, bodySize, width), y: bodyY, size: bodySize, font: regular, color: AZUL_TITULO });
+    const entLines = wrapText(entidade, bold, bodySize + 0.5, contentW - 60);
+    for (const line of entLines) {
+      bodyY -= bodyLineH;
+      page.drawText(line, { x: cx(line, bold, bodySize + 0.5, width), y: bodyY, size: bodySize + 0.5, font: bold, color: AZUL_TITULO });
+    }
+  }
+
+  // Carga horária (exibida apenas quando preenchida)
   const horas = Number(qtdeHoras);
   if (horas > 0) {
-    const horasText = `${horas} ${horas === 1 ? "hora" : "horas"} de atividade voluntária`;
+    const horasText = `com duração de ${horas} ${horas === 1 ? "hora" : "horas"}`;
     bodyY -= bodyLineH;
     page.drawText(horasText, { x: cx(horasText, regular, bodySize, width), y: bodyY, size: bodySize, font: regular, color: AZUL_TITULO });
   }
 
-  // Linhas descritivas fixas
-  const descLines = [
-    "com obras que enriquecem nossa comunidade, inspiram solidariedade e fortalecem a cultura.",
-    "Seu trabalho deixa marcas que vão além da arte.",
-  ];
-  for (const dline of descLines) {
-    const wrapped = wrapText(dline, regular, bodySize, contentW);
-    for (const wl of wrapped) {
-      bodyY -= bodyLineH;
-      page.drawText(wl, { x: cx(wl, regular, bodySize, width), y: bodyY, size: bodySize, font: regular, color: AZUL_TITULO });
-    }
-  }
+  // Linha de encerramento
+  const closingText = "contribuindo com nossa comunidade e os valores do Rotary.";
+  bodyY -= bodyLineH;
+  page.drawText(closingText, { x: cx(closingText, regular, bodySize, width), y: bodyY, size: bodySize, font: regular, color: AZUL_TITULO });
 
   // ── FRASE DE RECONHECIMENTO ────────────────────────────────────────────────
   const ackText = "Nosso sincero reconhecimento e gratidão!";

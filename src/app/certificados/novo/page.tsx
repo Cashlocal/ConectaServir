@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 type Voluntario = { id: string; nome: string };
+type Entidade   = { id: string; nome: string };
 
 export default function NovoCertificadoPage() {
   const router = useRouter();
@@ -12,14 +13,22 @@ export default function NovoCertificadoPage() {
   const [pronto, setPronto] = useState(false);
   const [voluntarios, setVoluntarios] = useState<Voluntario[]>([]);
   const [carregandoVols, setCarregandoVols] = useState(true);
+  const [entidades, setEntidades] = useState<Entidade[]>([]);
+  const [carregandoEnts, setCarregandoEnts] = useState(true);
 
-  const [voluntario, setVoluntario] = useState("");
-  const [qtdeHoras, setQtdeHoras] = useState("");
-  const [atividade, setAtividade] = useState("");
+  const [voluntario, setVoluntario]       = useState("");
+  const [qtdeHoras, setQtdeHoras]         = useState("");
+  const [atividade, setAtividade]         = useState("");
+  const [entidadeId, setEntidadeId]       = useState("");
+  const [entidadeNome, setEntidadeNome]   = useState("");
+  const [entidadeBusca, setEntidadeBusca] = useState("");
+  const [mostrarLista, setMostrarLista]   = useState(false);
 
   const [enviando, setEnviando] = useState(false);
-  const [sucesso, setSucesso] = useState(false);
-  const [erro, setErro] = useState("");
+  const [sucesso, setSucesso]   = useState(false);
+  const [erro, setErro]         = useState("");
+
+  const entidadeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     try {
@@ -44,7 +53,40 @@ export default function NovoCertificadoPage() {
         setCarregandoVols(false);
       }
     })();
+    (async () => {
+      try {
+        const res = await fetch("/api/entidades");
+        const data = await res.json();
+        setEntidades(Array.isArray(data) ? data : []);
+      } catch {
+        setEntidades([]);
+      } finally {
+        setCarregandoEnts(false);
+      }
+    })();
   }, [pronto]);
+
+  // Fecha dropdown ao clicar fora
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (entidadeRef.current && !entidadeRef.current.contains(e.target as Node)) {
+        setMostrarLista(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const entidadesFiltradas = entidades.filter((e) =>
+    e.nome.toLowerCase().includes(entidadeBusca.toLowerCase())
+  );
+
+  function selecionarEntidade(e: Entidade) {
+    setEntidadeId(e.id);
+    setEntidadeNome(e.nome);
+    setEntidadeBusca(e.nome);
+    setMostrarLista(false);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -54,7 +96,12 @@ export default function NovoCertificadoPage() {
       const res = await fetch("/api/certificados", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ voluntario, qtdeHoras: Number(qtdeHoras), atividade }),
+        body: JSON.stringify({
+          voluntario,
+          qtdeHoras: Number(qtdeHoras),
+          atividade,
+          entidadeId: entidadeId || undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok || data.error) { setErro("Ocorreu um erro. Tente novamente."); return; }
@@ -67,7 +114,9 @@ export default function NovoCertificadoPage() {
   }
 
   function resetar() {
-    setVoluntario(""); setQtdeHoras(""); setAtividade(""); setErro(""); setSucesso(false);
+    setVoluntario(""); setQtdeHoras(""); setAtividade("");
+    setEntidadeId(""); setEntidadeNome(""); setEntidadeBusca("");
+    setErro(""); setSucesso(false);
   }
 
   if (!pronto) return null;
@@ -77,7 +126,6 @@ export default function NovoCertificadoPage() {
 
   return (
     <main className="min-h-[calc(100vh-120px)] bg-[#eff6ff] px-6 py-12 md:px-16 md:py-[48px]">
-      {/* Voltar */}
       <Link
         href="/certificados"
         className="mb-6 inline-flex items-center gap-1.5 text-[14px] text-[#475569] transition-colors hover:text-[#1d4ed8]"
@@ -95,7 +143,7 @@ export default function NovoCertificadoPage() {
         Lançar Certificado
       </h1>
       <p className="mb-8 mt-2 text-center text-base text-[#475569] md:text-left">
-        Registre as horas de voluntariado realizadas
+        Registre a participação em atividade voluntária
       </p>
 
       <div className="mx-auto max-w-[560px]">
@@ -109,7 +157,7 @@ export default function NovoCertificadoPage() {
             <h2 className="text-2xl font-bold text-[#1e3a8a]" style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}>
               Certificado registrado com sucesso!
             </h2>
-            <p className="mt-2 text-[15px] text-[#475569]">As horas de voluntariado foram lançadas.</p>
+            <p className="mt-2 text-[15px] text-[#475569]">A participação foi registrada.</p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
               <button
                 type="button"
@@ -129,11 +177,20 @@ export default function NovoCertificadoPage() {
         ) : (
           <div className="rounded-2xl border border-[#bfdbfe] bg-white shadow-[0_4px_24px_rgba(29,78,216,0.07)] [border-width:0.5px]">
             <form onSubmit={handleSubmit} noValidate className="space-y-6 p-10">
+
+              {/* Voluntário */}
               <div>
                 <label htmlFor="voluntario" className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">
                   Voluntário <span className="text-[#dc2626]">*</span>
                 </label>
-                <select id="voluntario" required value={voluntario} onChange={(e) => setVoluntario(e.target.value)} disabled={carregandoVols} className={inputClass}>
+                <select
+                  id="voluntario"
+                  required
+                  value={voluntario}
+                  onChange={(e) => setVoluntario(e.target.value)}
+                  disabled={carregandoVols}
+                  className={inputClass}
+                >
                   <option value="">{carregandoVols ? "Carregando voluntários..." : "Selecione o voluntário..."}</option>
                   {voluntarios.map((v) => (
                     <option key={v.id} value={v.nome}>{v.nome}</option>
@@ -141,18 +198,79 @@ export default function NovoCertificadoPage() {
                 </select>
               </div>
 
-              <div>
-                <label htmlFor="qtdeHoras" className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">
-                  Quantidade de Horas <span className="text-[#dc2626]">*</span>
-                </label>
-                <input id="qtdeHoras" type="number" min={1} max={999} required value={qtdeHoras} onChange={(e) => setQtdeHoras(e.target.value)} placeholder="Ex: 4" className={inputClass} />
-              </div>
-
+              {/* Atividade */}
               <div>
                 <label htmlFor="atividade" className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">
-                  Descrição da Atividade <span className="text-[#dc2626]">*</span>
+                  Atividade <span className="text-[#dc2626]">*</span>
                 </label>
-                <textarea id="atividade" rows={4} required value={atividade} onChange={(e) => setAtividade(e.target.value)} placeholder="Descreva a atividade realizada..." className={`${inputClass} resize-none`} />
+                <input
+                  id="atividade"
+                  type="text"
+                  required
+                  value={atividade}
+                  onChange={(e) => setAtividade(e.target.value)}
+                  placeholder="Ex: XXI Leilão de Artes do Rotary"
+                  className={inputClass}
+                />
+              </div>
+
+              {/* Entidade (com filtro) */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">
+                  Entidade
+                </label>
+                <div ref={entidadeRef} className="relative">
+                  <input
+                    type="text"
+                    value={entidadeBusca}
+                    onChange={(e) => {
+                      setEntidadeBusca(e.target.value);
+                      setEntidadeId("");
+                      setEntidadeNome("");
+                      setMostrarLista(true);
+                    }}
+                    onFocus={() => setMostrarLista(true)}
+                    placeholder={carregandoEnts ? "Carregando entidades..." : "Buscar entidade..."}
+                    disabled={carregandoEnts}
+                    className={inputClass}
+                    autoComplete="off"
+                  />
+                  {mostrarLista && entidadesFiltradas.length > 0 && (
+                    <ul className="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-xl border border-[#bfdbfe] bg-white shadow-[0_4px_16px_rgba(29,78,216,0.10)] [border-width:0.5px]">
+                      {entidadesFiltradas.map((e) => (
+                        <li
+                          key={e.id}
+                          onMouseDown={() => selecionarEntidade(e)}
+                          className={`cursor-pointer px-4 py-2.5 text-[14px] transition-colors hover:bg-[#eff6ff] ${entidadeId === e.id ? "bg-[#dbeafe] font-medium text-[#1e3a8a]" : "text-[#0f172a]"}`}
+                        >
+                          {e.nome}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {mostrarLista && entidadeBusca.length > 0 && entidadesFiltradas.length === 0 && (
+                    <div className="absolute z-20 mt-1 w-full rounded-xl border border-[#bfdbfe] bg-white px-4 py-3 text-[13px] text-[#94a3b8] shadow-[0_4px_16px_rgba(29,78,216,0.10)] [border-width:0.5px]">
+                      Nenhuma entidade encontrada
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Quantidade de Horas */}
+              <div>
+                <label htmlFor="qtdeHoras" className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">
+                  Quantidade de Horas
+                </label>
+                <input
+                  id="qtdeHoras"
+                  type="number"
+                  min={1}
+                  max={999}
+                  value={qtdeHoras}
+                  onChange={(e) => setQtdeHoras(e.target.value)}
+                  placeholder="Ex: 4"
+                  className={inputClass}
+                />
               </div>
 
               {erro && (
@@ -166,7 +284,7 @@ export default function NovoCertificadoPage() {
 
               <button
                 type="submit"
-                disabled={enviando || !voluntario || !qtdeHoras || !atividade}
+                disabled={enviando || !voluntario || !atividade}
                 className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-[#1d4ed8] px-6 py-[14px] text-[15px] font-semibold text-white transition-colors hover:bg-[#1e40af] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {enviando ? (

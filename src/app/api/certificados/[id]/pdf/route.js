@@ -2,6 +2,22 @@ import { gerarCertificadoPdf } from "@/lib/gerarCertificadoPdf";
 
 export const runtime = "nodejs";
 
+const TABLE_ENTIDADES = "tblPIOP4H76gOOPSe";
+
+async function buscarNomeEntidade(apiKey, baseId, recordId) {
+  try {
+    const res = await fetch(
+      `https://api.airtable.com/v0/${baseId}/${TABLE_ENTIDADES}/${recordId}`,
+      { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" }
+    );
+    if (!res.ok) return "";
+    const data = await res.json();
+    return data.fields?.["Nome"] ?? "";
+  } catch {
+    return "";
+  }
+}
+
 export async function GET(_req, { params }) {
   const { id: recordId } = await params;
 
@@ -19,9 +35,7 @@ export async function GET(_req, { params }) {
       { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" }
     );
 
-    if (!recRes.ok) {
-      return new Response("Registro não encontrado.", { status: 404 });
-    }
+    if (!recRes.ok) return new Response("Registro não encontrado.", { status: 404 });
 
     const rec = await recRes.json();
     const voluntario  = rec.fields["Voluntario"] ?? "";
@@ -31,7 +45,12 @@ export async function GET(_req, { params }) {
       day: "2-digit", month: "long", year: "numeric",
     });
 
-    const pdfBuffer = await gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, dataEmissao });
+    const entidadeIds = rec.fields["Entidade"];
+    const entidade = Array.isArray(entidadeIds) && entidadeIds.length > 0
+      ? await buscarNomeEntidade(apiKey, baseId, entidadeIds[0])
+      : "";
+
+    const pdfBuffer = await gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, entidade, dataEmissao });
     const filename = `certificado-${voluntario.replace(/\s+/g, "-").toLowerCase()}.pdf`;
 
     return new Response(pdfBuffer, {
