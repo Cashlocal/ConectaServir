@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 
-const TABLE_ENTIDADES = process.env.AIRTABLE_TABLE_ENTIDADES ?? "tblPIOP4H76gOOPSe";
-
 export async function GET() {
   try {
     const apiKey = process.env.AIRTABLE_API_KEY;
@@ -83,20 +81,5 @@ export async function POST(req) {
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Erro inesperado. Tente novamente." }, { status: 500 });
-  }
-}
-
-/** Busca o nome de uma entidade pelo ID de registro */
-export async function buscarNomeEntidade(apiKey, baseId, recordId) {
-  try {
-    const res = await fetch(
-      `https://api.airtable.com/v0/${baseId}/${TABLE_ENTIDADES}/${recordId}`,
-      { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" }
-    );
-    if (!res.ok) return "";
-    const data = await res.json();
-    return data.fields?.["Nome"] ?? "";
-  } catch {
-    return "";
   }
 }
