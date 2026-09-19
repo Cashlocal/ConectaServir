@@ -79,10 +79,11 @@ export function Navbar() {
   return (
     <>
       <header className="sticky top-0 z-[100] border-b border-[#e2e8f0] bg-white">
-        <div className="mx-auto grid max-w-[1400px] grid-cols-[1fr_auto] items-center gap-x-4 px-6 py-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:gap-6 md:px-16 md:py-3">
+        <div className="mx-auto flex max-w-[1400px] items-center gap-4 px-6 py-3 md:px-10 md:py-3">
+          {/* Logo ConectaServir */}
           <Link
             href="/"
-            className="group min-w-0 justify-self-start rounded-lg outline-offset-4"
+            className="group shrink-0 rounded-lg outline-offset-4"
             aria-label="ConectaServir — Início"
           >
             <Image
@@ -90,61 +91,54 @@ export function Navbar() {
               alt="ConectaServir — Unindo voluntários e projetos sociais"
               width={320}
               height={96}
-              className="h-12 w-auto max-w-[min(100%,260px)] object-contain object-left transition-all duration-300 ease-out group-hover:scale-[1.02] group-hover:opacity-95 md:h-[72px] md:max-w-[320px]"
+              className="h-12 w-auto max-w-[200px] object-contain object-left transition-all duration-300 ease-out group-hover:scale-[1.02] group-hover:opacity-95 md:h-[68px] md:max-w-[280px]"
               priority
             />
           </Link>
 
-          <div className="hidden justify-self-center opacity-90 transition-opacity duration-200 hover:opacity-100 md:col-start-2 md:row-start-1 md:flex">
-            <Image
-              src={ROTARY_LOGO}
-              alt="Rotary Club de Pato Branco"
-              width={200}
-              height={72}
-              className="h-14 w-auto max-w-[200px] object-contain md:h-[72px] md:max-w-none"
-              priority
-            />
-          </div>
+          {/* Espaço flexível */}
+          <div className="flex-1" />
 
-          {/* Nav desktop */}
-          <nav
-            className="hidden items-center gap-8 md:col-start-3 md:row-start-1 md:flex md:justify-self-end"
-            aria-label="Principal"
-          >
-            {links.map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                className="whitespace-nowrap rounded-md px-1 py-0.5 text-[15px] font-medium text-[#0f172a] no-underline decoration-[#1a44a6] decoration-2 underline-offset-4 transition-all duration-200 hover:text-[#1a44a6] hover:underline"
-              >
-                {label}
-              </Link>
-            ))}
-            {!usuario ? (
-              <Link
-                href="/login"
-                className="ml-2 inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-[#1a44a6] px-4 py-2 text-[14px] font-semibold text-white transition-colors duration-200 hover:bg-[#153575]"
-              >
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
+          {/* Logo Rotary + separador + nav */}
+          <div className="hidden items-center gap-6 md:flex">
+            <div className="flex shrink-0 items-center opacity-90">
+              <Image
+                src={ROTARY_LOGO}
+                alt="Rotary Club de Pato Branco"
+                width={180}
+                height={64}
+                className="h-[60px] w-auto object-contain md:h-[68px]"
+                priority
+              />
+            </div>
+
+            <span className="h-8 w-px shrink-0 bg-[#e2e8f0]" aria-hidden="true" />
+
+            {/* Nav desktop */}
+            <nav className="flex items-center gap-5" aria-label="Principal">
+              {links.map(({ href, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="whitespace-nowrap rounded-md px-1 py-0.5 text-[14px] font-medium text-[#0f172a] no-underline decoration-[#1a44a6] decoration-2 underline-offset-4 transition-all duration-200 hover:text-[#1a44a6] hover:underline"
                 >
-                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                  <polyline points="10 17 15 12 10 7" />
-                  <line x1="15" y1="12" x2="3" y2="12" />
-                </svg>
-                Login
-              </Link>
-            ) : (
-              /* Avatar + dropdown */
-              <div className="relative ml-2" ref={dropdownRef}>
+                  {label}
+                </Link>
+              ))}
+              {!usuario ? (
+                <Link
+                  href="/login"
+                  className="ml-1 inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-[#1a44a6] px-4 py-2 text-[13px] font-semibold text-white transition-colors duration-200 hover:bg-[#153575]"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                    <polyline points="10 17 15 12 10 7" />
+                    <line x1="15" y1="12" x2="3" y2="12" />
+                  </svg>
+                  Login
+                </Link>
+              ) : (
+                <div className="relative ml-1" ref={dropdownRef}>
                 <button
                   type="button"
                   onClick={() => setDropdownOpen((v) => !v)}
@@ -243,12 +237,13 @@ export function Navbar() {
                 )}
               </div>
             )}
-          </nav>
+            </nav>
+          </div>
 
           {/* Hamburguer mobile */}
           <button
             type="button"
-            className="col-start-2 row-start-1 flex h-11 w-11 shrink-0 items-center justify-center justify-self-end rounded-lg border border-[#e2e8f0] text-[#0f172a] transition-colors hover:border-[#1a44a6]/40 hover:bg-[var(--fundo-secao)] md:hidden"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#0f172a] transition-colors hover:border-[#1a44a6]/40 hover:bg-[var(--fundo-secao)] md:hidden"
             aria-expanded={open}
             aria-label={open ? "Fechar menu" : "Abrir menu"}
             onClick={() => setOpen((o) => !o)}
