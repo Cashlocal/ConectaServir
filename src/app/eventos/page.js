@@ -77,10 +77,18 @@ function buildCalendarCells(year, month) {
   return cells;
 }
 
+const FILTROS = [
+  { id: "mes",    label: "Este mês"        },
+  { id: "hoje",   label: "Hoje"            },
+  { id: "semana", label: "Esta semana"     },
+  { id: "15dias", label: "Próximos 15 dias"},
+];
+
 export default function EventosPage() {
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [usuarioLogado, setUsuarioLogado] = useState(false);
+  const [filtro, setFiltro] = useState("mes");
   const now = new Date();
   const [mesIdx, setMesIdx] = useState(now.getUTCMonth());
   const [anoIdx, setAnoIdx] = useState(now.getUTCFullYear());
@@ -128,6 +136,44 @@ export default function EventosPage() {
     }),
     [eventos, mesIdx, anoIdx]
   );
+
+  const eventosFiltrados = useMemo(() => {
+    const n = new Date();
+    const todayMs = Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate());
+
+    if (filtro === "hoje") {
+      return eventos.filter((ev) => {
+        const p = parseEventoData(ev.data);
+        if (!p) return false;
+        return Date.UTC(p.ano, p.mes, p.dia) === todayMs;
+      });
+    }
+
+    if (filtro === "semana") {
+      const dow = n.getUTCDay();
+      const inicioMs = todayMs - dow * 86400000;
+      const fimMs    = inicioMs + 6 * 86400000;
+      return eventos.filter((ev) => {
+        const p = parseEventoData(ev.data);
+        if (!p) return false;
+        const evMs = Date.UTC(p.ano, p.mes, p.dia);
+        return evMs >= inicioMs && evMs <= fimMs;
+      });
+    }
+
+    if (filtro === "15dias") {
+      const fimMs = todayMs + 14 * 86400000;
+      return eventos.filter((ev) => {
+        const p = parseEventoData(ev.data);
+        if (!p) return false;
+        const evMs = Date.UTC(p.ano, p.mes, p.dia);
+        return evMs >= todayMs && evMs <= fimMs;
+      });
+    }
+
+    // "mes" — padrão
+    return eventosDoMes;
+  }, [filtro, eventos, eventosDoMes]);
 
   const cells = useMemo(() => buildCalendarCells(anoIdx, mesIdx), [anoIdx, mesIdx]);
   const hoje = utcToday();
@@ -178,6 +224,24 @@ export default function EventosPage() {
         )}
       </div>
 
+      {/* Botões de filtro */}
+        <div className="mt-5 flex flex-wrap gap-2">
+          {FILTROS.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setFiltro(f.id)}
+              className={`rounded-full px-4 py-1.5 text-[13px] font-medium transition-colors
+                ${filtro === f.id
+                  ? "bg-[#1d4ed8] text-white shadow-sm"
+                  : "border border-[#bfdbfe] bg-white text-[#1e3a8a] hover:bg-[#eff6ff] [border-width:0.5px]"
+                }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
       <div className="mt-8 flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10">
         {/* Coluna esquerda: mini calendário */}
         <div className="shrink-0 lg:w-[320px]">
@@ -186,6 +250,7 @@ export default function EventosPage() {
               <span className="text-base font-semibold text-[#1e3a8a]">
                 {MESES[mesIdx]} {anoIdx}
               </span>
+              {filtro === "mes" && (
               <div className="flex gap-2">
                 <button type="button" onClick={prevMonth}
                   className="rounded-lg border border-[#bfdbfe] px-3 py-1 text-sm text-[#475569] [border-width:0.5px] transition-colors hover:bg-[#eff6ff]"
@@ -194,6 +259,7 @@ export default function EventosPage() {
                   className="rounded-lg border border-[#bfdbfe] px-3 py-1 text-sm text-[#475569] [border-width:0.5px] transition-colors hover:bg-[#eff6ff]"
                   aria-label="Próximo mês">→</button>
               </div>
+              )}
             </div>
 
             <div className="grid grid-cols-7 gap-0">
@@ -224,14 +290,21 @@ export default function EventosPage() {
 
           {/* Legenda do mês */}
           <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#94a3b8]">
-            {eventosDoMes.length} evento{eventosDoMes.length !== 1 ? "s" : ""} em {MESES[mesIdx]}
+            {eventosFiltrados.length} evento{eventosFiltrados.length !== 1 ? "s" : ""}
+            {filtro === "mes" ? ` em ${MESES[mesIdx]}` :
+             filtro === "hoje" ? " hoje" :
+             filtro === "semana" ? " esta semana" :
+             " nos próximos 15 dias"}
           </p>
         </div>
 
         {/* Coluna direita: grid de cards */}
         <div className="flex-1">
           <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#94a3b8]">
-            Eventos de {MESES[mesIdx]}
+            {filtro === "mes"    ? `Eventos de ${MESES[mesIdx]}` :
+             filtro === "hoje"   ? "Eventos de hoje" :
+             filtro === "semana" ? "Eventos desta semana" :
+             "Próximos 15 dias"}
           </p>
 
           {loading ? (
@@ -242,7 +315,7 @@ export default function EventosPage() {
               ))}
               <style>{`@keyframes eventosSkel { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }`}</style>
             </div>
-          ) : eventosDoMes.length === 0 ? (
+          ) : eventosFiltrados.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-2xl border border-[#bfdbfe] bg-white py-20 [border-width:0.5px]">
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#dbeafe]">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -255,7 +328,7 @@ export default function EventosPage() {
             </div>
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-              {eventosDoMes.map((ev, idx) => {
+              {eventosFiltrados.map((ev, idx) => {
                 const p = parseEventoData(ev.data);
                 const horario = p ? `${p.hora}:${p.min}` : "";
                 const badge = badgePara(ev);
