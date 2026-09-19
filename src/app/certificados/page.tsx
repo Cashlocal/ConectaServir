@@ -30,6 +30,12 @@ export default function CertificadosPage() {
   const [enviandoEmail, setEnviandoEmail] = useState<string | null>(null); // id do cert sendo enviado
   const [emailSucesso, setEmailSucesso]   = useState<string | null>(null); // id com envio ok
   const [emailErro, setEmailErro]         = useState<string | null>(null); // id com erro
+  const [toast, setToast] = useState<{ msg: string; tipo: "ok" | "erro" } | null>(null);
+
+  function showToast(msg: string, tipo: "ok" | "erro") {
+    setToast({ msg, tipo });
+    setTimeout(() => setToast(null), 5000);
+  }
 
   useEffect(() => {
     try {
@@ -66,9 +72,12 @@ export default function CertificadosPage() {
       const res = await fetch(`/api/certificados/${certId}/enviar-email`, { method: "POST" });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setEmailErro(data.error ?? "Erro ao enviar.");
+        const msg = data.error ?? "Erro ao enviar.";
+        setEmailErro(msg);
+        showToast(msg, "erro");
       } else {
         setEmailSucesso(certId);
+        showToast("Email enviado com sucesso!", "ok");
         setTimeout(() => setEmailSucesso(null), 4000);
       }
     } catch {
@@ -261,6 +270,30 @@ export default function CertificadosPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Toast de notificação */}
+      {toast && (
+        <div
+          className={`fixed bottom-6 left-1/2 z-[500] flex -translate-x-1/2 items-center gap-3 rounded-2xl px-5 py-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.18)]
+            ${toast.tipo === "ok" ? "bg-[#16a34a] text-white" : "bg-[#dc2626] text-white"}`}
+        >
+          {toast.tipo === "ok" ? (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+          ) : (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          )}
+          <span className="text-[14px] font-semibold">{toast.msg}</span>
+          <button type="button" onClick={() => setToast(null)} className="ml-1 opacity-80 hover:opacity-100" aria-label="Fechar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
         </div>
       )}
     </main>
