@@ -36,7 +36,7 @@ function wrapText(text, font, size, maxWidth) {
   return lines;
 }
 
-export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, dataEmissao }) {
+export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, entidade, dataEmissao }) {
   const pdfDoc = await PDFDocument.create();
 
   // A4 paisagem
@@ -153,7 +153,6 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, da
   const introText = "o Rotary Club de Pato Branco certifica a participação de";
   const introY    = subY - 30;
   page.drawText(introText, { x: cx(introText, regular, introSize, width), y: introY, size: introSize, font: regular, color: AZUL_TITULO });
-
   // ── NOME (FONTE SCRIPT) ────────────────────────────────────────────────────
   const nameSize = 46;
   const nameY    = introY - 52;
@@ -188,10 +187,22 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, da
     page.drawText(line, { x: cx(line, bold, bodySize + 0.5, width), y: bodyY, size: bodySize + 0.5, font: bold, color: AZUL_TITULO });
   }
 
+  // Entidade (exibida apenas quando preenchida)
+  if (entidade) {
+    const entLabel = "na entidade";
+    bodyY -= bodyLineH;
+    page.drawText(entLabel, { x: cx(entLabel, regular, bodySize, width), y: bodyY, size: bodySize, font: regular, color: AZUL_TITULO });
+    const entLines = wrapText(entidade, bold, bodySize + 0.5, contentW - 60);
+    for (const line of entLines) {
+      bodyY -= bodyLineH;
+      page.drawText(line, { x: cx(line, bold, bodySize + 0.5, width), y: bodyY, size: bodySize + 0.5, font: bold, color: AZUL_TITULO });
+    }
+  }
+
   // Carga horária (exibida apenas quando preenchida)
   const horas = Number(qtdeHoras);
   if (horas > 0) {
-    const horasText = `com carga horária de ${horas} ${horas === 1 ? "hora" : "horas"}`;
+    const horasText = `com duração de ${horas} ${horas === 1 ? "hora" : "horas"}`;
     bodyY -= bodyLineH;
     page.drawText(horasText, { x: cx(horasText, regular, bodySize, width), y: bodyY, size: bodySize, font: regular, color: AZUL_TITULO });
   }
