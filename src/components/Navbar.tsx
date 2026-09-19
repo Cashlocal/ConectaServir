@@ -16,6 +16,7 @@ const links = [
   { href: "/projetos", label: "Projetos" },
   { href: "/eventos", label: "Eventos" },
   { href: "/voluntarios", label: "Voluntários" },
+  { href: "/consultar-demandas", label: "Demandas" },
 ];
 
 type Usuario = { id: string; nome: string; email: string };
