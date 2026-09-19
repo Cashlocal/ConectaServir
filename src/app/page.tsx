@@ -56,23 +56,23 @@ export default function HomePage() {
               apaixonadas por fazer a diferença com projetos que precisam de
               ajuda.
             </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-4 md:justify-start">
+            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 md:justify-start">
               <Link
                 href="/projetos"
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#1a44a6] px-6 py-3 text-base font-medium text-white transition-colors hover:bg-[#153575]"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#1a44a6] px-6 py-3 text-base font-medium text-white transition-colors hover:bg-[#153575]"
               >
                 Cadastrar Projeto
                 <span aria-hidden>→</span>
               </Link>
               <Link
                 href="/voluntarios"
-                className="inline-flex items-center justify-center rounded-lg border-2 border-[#1a44a6] bg-white px-6 py-3 text-base font-medium text-[#1a44a6] transition-colors hover:bg-[#eef3fc]"
+                className="inline-flex w-full items-center justify-center rounded-lg border-2 border-[#1a44a6] bg-white px-6 py-3 text-base font-medium text-[#1a44a6] transition-colors hover:bg-[#eef3fc]"
               >
                 Ser Voluntário
               </Link>
               <Link
                 href="/consultar-demandas"
-                className="inline-flex items-center justify-center gap-2 rounded-lg border-2 border-[#d97706] bg-white px-6 py-3 text-base font-medium text-[#d97706] transition-colors hover:bg-[#fffbeb]"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border-2 border-[#d97706] bg-white px-6 py-3 text-base font-medium text-[#d97706] transition-colors hover:bg-[#fffbeb]"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
@@ -83,7 +83,7 @@ export default function HomePage() {
               </Link>
               <Link
                 href="/eventos"
-                className="inline-flex items-center justify-center gap-2 rounded-lg border-2 border-[#16a34a] bg-white px-6 py-3 text-base font-medium text-[#16a34a] transition-colors hover:bg-[#f0fdf4]"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border-2 border-[#16a34a] bg-white px-6 py-3 text-base font-medium text-[#16a34a] transition-colors hover:bg-[#f0fdf4]"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />

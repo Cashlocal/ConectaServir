@@ -212,6 +212,16 @@ export function Navbar() {
                     <div style={{ borderTop: "0.5px solid #e2e8f0" }} />
 
                     <Link
+                      href="/eventos-admin"
+                      onClick={() => setDropdownOpen(false)}
+                      className="block px-4 py-2.5 text-[14px] text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
+                    >
+                      Eventos
+                    </Link>
+
+                    <div style={{ borderTop: "0.5px solid #e2e8f0" }} />
+
+                    <Link
                       href="/perfil"
                       onClick={() => setDropdownOpen(false)}
                       className="block px-4 py-2.5 text-[14px] text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
@@ -349,6 +359,13 @@ export function Navbar() {
                     onClick={() => setOpen(false)}
                   >
                     Demandas
+                  </Link>
+                  <Link
+                    href="/eventos-admin"
+                    className="rounded-lg px-4 py-3 text-[15px] font-medium text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
+                    onClick={() => setOpen(false)}
+                  >
+                    Eventos
                   </Link>
                   <Link
                     href="/perfil"

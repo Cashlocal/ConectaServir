@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 const MESES = [
@@ -109,9 +110,19 @@ function buildCalendarCells(year, month) {
 export default function EventosPage() {
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [usuarioLogado, setUsuarioLogado] = useState(false);
   const now = new Date();
   const [mesIdx, setMesIdx] = useState(now.getUTCMonth());
   const [anoIdx, setAnoIdx] = useState(now.getUTCFullYear());
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("usuario");
+      if (raw) setUsuarioLogado(true);
+    } catch {
+      // localStorage indisponível — ignora
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -189,12 +200,25 @@ export default function EventosPage() {
 
   return (
     <main className="bg-[#eff6ff] px-6 py-12 md:px-16 md:py-[48px]">
-      <h1
-        className="text-center text-[40px] font-bold leading-tight text-[#1e3a8a] md:text-left"
-        style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}
-      >
-        Calendário de Eventos
-      </h1>
+      <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <h1
+          className="text-center text-[40px] font-bold leading-tight text-[#1e3a8a] md:text-left"
+          style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}
+        >
+          Calendário de Eventos
+        </h1>
+        {usuarioLogado && (
+          <Link
+            href="/eventos-admin"
+            className="inline-flex items-center gap-2 self-center rounded-xl bg-[#1d4ed8] px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#1e40af] sm:self-start sm:mt-2"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Novo Evento
+          </Link>
+        )}
+      </div>
       <p className="mb-8 mt-2 text-center text-base text-[#475569] md:mb-8 md:text-left">
         Acompanhe as atividades e iniciativas do clube
       </p>
