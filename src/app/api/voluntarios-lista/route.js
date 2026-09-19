@@ -10,7 +10,7 @@ export async function GET() {
       return NextResponse.json([]);
     }
 
-    const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}`;
+    const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}?filterByFormula=${encodeURIComponent("{Status}='Ativo'")}`;
 
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${apiKey}` },
