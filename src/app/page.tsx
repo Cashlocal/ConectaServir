@@ -70,6 +70,17 @@ export default function HomePage() {
               >
                 Ser Voluntário
               </Link>
+              <Link
+                href="/consultar-demandas"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border-2 border-[#d97706] bg-white px-6 py-3 text-base font-medium text-[#d97706] transition-colors hover:bg-[#fffbeb]"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+                  <rect x="9" y="3" width="6" height="4" rx="1" />
+                  <line x1="9" y1="12" x2="15" y2="12" /><line x1="9" y1="16" x2="13" y2="16" />
+                </svg>
+                Consultar Demandas
+              </Link>
             </div>
           </div>
           <div className="relative w-full shrink-0 overflow-hidden rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.07)] transition-shadow duration-300 ease-out hover:shadow-[0_12px_40px_rgba(26,68,166,0.18)] md:w-[min(100%,520px)] md:max-w-[52%] lg:max-w-[520px]">
