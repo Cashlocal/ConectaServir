@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 const TABLE_ENTIDADES = process.env.AIRTABLE_TABLE_ENTIDADES ?? "tblPIOP4H76gOOPSe";
 
-export async function GET() {
+export async function GET(req) {
   try {
     const apiKey   = process.env.AIRTABLE_API_KEY;
     const baseId   = process.env.AIRTABLE_BASE_ID;
@@ -10,6 +10,9 @@ export async function GET() {
     const tableVol = process.env.AIRTABLE_TABLE_VOLUNTARIOS;
 
     if (!apiKey || !baseId || !table) return NextResponse.json([]);
+
+    const { searchParams } = new URL(req.url);
+    const voluntarioIdFiltro = searchParams.get("voluntarioId");
 
     // Busca certificados, voluntários e entidades em paralelo para resolver linked records
     const volParams = new URLSearchParams();
@@ -19,9 +22,14 @@ export async function GET() {
     const entParams = new URLSearchParams();
     entParams.append("fields[]", "Nome");
 
+    let certUrl = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}?sort[0][field]=Atividade&sort[0][direction]=asc`;
+    if (voluntarioIdFiltro) {
+      certUrl += `&filterByFormula=${encodeURIComponent(`FIND("${voluntarioIdFiltro}",ARRAYJOIN({Voluntario}))>0`)}`;
+    }
+
     const [certRes, volRes, entRes] = await Promise.all([
       fetch(
-        `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}?sort[0][field]=Atividade&sort[0][direction]=asc`,
+        certUrl,
         { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" }
       ),
       tableVol

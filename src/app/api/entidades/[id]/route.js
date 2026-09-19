@@ -12,7 +12,7 @@ export async function PATCH(req, { params }) {
   }
 
   try {
-    const { nome, descricao } = await req.json();
+    const { nome, descricao, telefone, email } = await req.json();
     if (!nome?.trim()) {
       return NextResponse.json({ error: "O campo Nome é obrigatório." }, { status: 400 });
     }
@@ -24,8 +24,10 @@ export async function PATCH(req, { params }) {
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           fields: {
-            Nome: nome.trim(),
+            Nome:      nome.trim(),
             Descricao: (descricao ?? "").trim(),
+            Telefone:  (telefone  ?? "").trim(),
+            Email:     (email     ?? "").trim(),
           },
         }),
       }
@@ -40,9 +42,11 @@ export async function PATCH(req, { params }) {
     }
 
     return NextResponse.json({
-      id: data.id,
-      nome: data.fields["Nome"] ?? "",
-      descricao: data.fields["Descricao"] ?? "",
+      id:       data.id,
+      nome:     data.fields["Nome"]      ?? "",
+      descricao:data.fields["Descricao"] ?? "",
+      telefone: data.fields["Telefone"]  ?? "",
+      email:    data.fields["Email"]     ?? "",
     });
   } catch {
     return NextResponse.json({ error: "Erro inesperado." }, { status: 500 });

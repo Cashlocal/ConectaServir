@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Entidade = { id: string; nome: string; descricao: string };
+type Entidade = { id: string; nome: string; descricao: string; telefone: string; email: string };
 
 type ModalState =
   | { tipo: "novo" }
@@ -13,15 +13,18 @@ type ModalState =
 
 export default function EntidadesPage() {
   const router = useRouter();
-  const [pronto, setPronto]       = useState(false);
-  const [entidades, setEntidades] = useState<Entidade[]>([]);
+  const [pronto, setPronto]         = useState(false);
+  const [entidades, setEntidades]   = useState<Entidade[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [modal, setModal]         = useState<ModalState>(null);
-  const [salvando, setSalvando]   = useState(false);
-  const [erro, setErro]           = useState("");
+  const [busca, setBusca]           = useState("");
+  const [modal, setModal]           = useState<ModalState>(null);
+  const [salvando, setSalvando]     = useState(false);
+  const [erro, setErro]             = useState("");
 
   const [nome, setNome]           = useState("");
   const [descricao, setDescricao] = useState("");
+  const [telefone, setTelefone]   = useState("");
+  const [email, setEmail]         = useState("");
 
   const nomeRef = useRef<HTMLInputElement>(null);
 
@@ -35,19 +38,13 @@ export default function EntidadesPage() {
     setPronto(true);
   }, [router]);
 
-  useEffect(() => {
-    if (!pronto) return;
-    carregarEntidades();
-  }, [pronto]);
-
-  useEffect(() => {
-    if (modal) setTimeout(() => nomeRef.current?.focus(), 50);
-  }, [modal]);
+  useEffect(() => { if (!pronto) return; carregarEntidades(); }, [pronto]);
+  useEffect(() => { if (modal) setTimeout(() => nomeRef.current?.focus(), 50); }, [modal]);
 
   async function carregarEntidades() {
     setCarregando(true);
     try {
-      const res = await fetch("/api/entidades");
+      const res  = await fetch("/api/entidades");
       const data = await res.json();
       setEntidades(Array.isArray(data) ? data : []);
     } catch {
@@ -58,12 +55,13 @@ export default function EntidadesPage() {
   }
 
   function abrirNovo() {
-    setNome(""); setDescricao(""); setErro("");
+    setNome(""); setDescricao(""); setTelefone(""); setEmail(""); setErro("");
     setModal({ tipo: "novo" });
   }
 
   function abrirEditar(e: Entidade) {
-    setNome(e.nome); setDescricao(e.descricao); setErro("");
+    setNome(e.nome); setDescricao(e.descricao);
+    setTelefone(e.telefone); setEmail(e.email); setErro("");
     setModal({ tipo: "editar", entidade: e });
   }
 
@@ -80,26 +78,22 @@ export default function EntidadesPage() {
 
     try {
       const isEditar = modal?.tipo === "editar";
-      const url = isEditar ? `/api/entidades/${(modal as { tipo: "editar"; entidade: Entidade }).entidade.id}` : "/api/entidades";
+      const url    = isEditar ? `/api/entidades/${(modal as { tipo: "editar"; entidade: Entidade }).entidade.id}` : "/api/entidades";
       const method = isEditar ? "PATCH" : "POST";
 
-      const res = await fetch(url, {
+      const res  = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome, descricao }),
+        body: JSON.stringify({ nome, descricao, telefone, email }),
       });
       const data = await res.json();
 
       if (!res.ok) { setErro(data.error ?? "Erro ao salvar."); return; }
 
       if (isEditar) {
-        setEntidades((prev) =>
-          prev.map((e) => (e.id === data.id ? data : e))
-        );
+        setEntidades((prev) => prev.map((e) => (e.id === data.id ? data : e)));
       } else {
-        setEntidades((prev) =>
-          [...prev, data].sort((a, b) => a.nome.localeCompare(b.nome))
-        );
+        setEntidades((prev) => [...prev, data].sort((a, b) => a.nome.localeCompare(b.nome)));
       }
       fechar();
     } catch {
@@ -112,7 +106,6 @@ export default function EntidadesPage() {
   async function excluir() {
     if (modal?.tipo !== "excluir") return;
     setSalvando(true); setErro("");
-
     try {
       const res = await fetch(`/api/entidades/${modal.entidade.id}`, { method: "DELETE" });
       if (!res.ok) {
@@ -130,6 +123,17 @@ export default function EntidadesPage() {
 
   if (!pronto) return null;
 
+  const q = busca.toLowerCase();
+  const filtradas = q
+    ? entidades.filter(
+        (e) =>
+          e.nome.toLowerCase().includes(q) ||
+          e.descricao.toLowerCase().includes(q) ||
+          e.telefone.toLowerCase().includes(q) ||
+          e.email.toLowerCase().includes(q)
+      )
+    : entidades;
+
   const inputClass =
     "w-full rounded-xl border border-[#bfdbfe] bg-[#f8faff] px-4 py-3 text-[15px] text-[#0f172a] placeholder-[#94a3b8] outline-none transition-all [border-width:0.5px] focus:border-[#1a44a6] focus:bg-white focus:ring-2 focus:ring-[#1a44a6]/15";
 
@@ -144,9 +148,7 @@ export default function EntidadesPage() {
           >
             Entidades
           </h1>
-          <p className="mt-1 text-base text-[#475569]">
-            Gerencie as entidades parceiras do Rotary
-          </p>
+          <p className="mt-1 text-base text-[#475569]">Gerencie as entidades parceiras do Rotary</p>
         </div>
         <button
           type="button"
@@ -160,6 +162,30 @@ export default function EntidadesPage() {
         </button>
       </div>
 
+      {/* Campo de busca */}
+      <div className="relative mb-4">
+        <svg className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#94a3b8]"
+          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input
+          type="text"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          placeholder="Buscar por nome, descrição, telefone ou email..."
+          className="w-full rounded-xl border border-[#bfdbfe] bg-white py-3 pl-11 pr-10 text-[14px] text-[#0f172a] placeholder-[#94a3b8] outline-none [border-width:0.5px] focus:border-[#1a44a6] focus:ring-2 focus:ring-[#1a44a6]/15"
+        />
+        {busca && (
+          <button type="button" onClick={() => setBusca("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-[#94a3b8] hover:text-[#475569]"
+            aria-label="Limpar busca">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        )}
+      </div>
+
       {/* Tabela */}
       <div className="overflow-hidden rounded-2xl border border-[#bfdbfe] bg-white shadow-[0_4px_24px_rgba(29,78,216,0.07)] [border-width:0.5px]">
         {carregando ? (
@@ -170,15 +196,17 @@ export default function EntidadesPage() {
             </svg>
             Carregando entidades...
           </div>
-        ) : entidades.length === 0 ? (
+        ) : filtradas.length === 0 ? (
           <div className="py-20 text-center">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#dbeafe]">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
               </svg>
             </div>
-            <p className="text-[15px] font-medium text-[#1e3a8a]">Nenhuma entidade cadastrada</p>
-            <p className="mt-1 text-sm text-[#94a3b8]">Clique em "Nova Entidade" para começar.</p>
+            <p className="text-[15px] font-medium text-[#1e3a8a]">
+              {busca ? "Nenhuma entidade encontrada para essa busca" : "Nenhuma entidade cadastrada"}
+            </p>
+            {!busca && <p className="mt-1 text-sm text-[#94a3b8]">Clique em "Nova Entidade" para começar.</p>}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -187,35 +215,31 @@ export default function EntidadesPage() {
                 <tr className="border-b border-[#e2e8f0] bg-[#f8faff]">
                   <th className="px-6 py-3.5 text-left text-[12px] font-semibold uppercase tracking-wide text-[#64748b]">Nome</th>
                   <th className="px-6 py-3.5 text-left text-[12px] font-semibold uppercase tracking-wide text-[#64748b]">Descrição</th>
+                  <th className="hidden px-6 py-3.5 text-left text-[12px] font-semibold uppercase tracking-wide text-[#64748b] md:table-cell">Telefone</th>
+                  <th className="hidden px-6 py-3.5 text-left text-[12px] font-semibold uppercase tracking-wide text-[#64748b] md:table-cell">Email</th>
                   <th className="w-28 px-6 py-3.5 text-right text-[12px] font-semibold uppercase tracking-wide text-[#64748b]">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f1f5f9]">
-                {entidades.map((ent) => (
+                {filtradas.map((ent) => (
                   <tr key={ent.id} className="transition-colors hover:bg-[#f8faff]">
                     <td className="px-6 py-4 font-medium text-[#1e3a8a]">{ent.nome}</td>
                     <td className="px-6 py-4 text-[#475569]">{ent.descricao || <span className="text-[#cbd5e1]">—</span>}</td>
+                    <td className="hidden px-6 py-4 text-[#475569] md:table-cell">{ent.telefone || <span className="text-[#cbd5e1]">—</span>}</td>
+                    <td className="hidden px-6 py-4 text-[#475569] md:table-cell">{ent.email || <span className="text-[#cbd5e1]">—</span>}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="inline-flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => abrirEditar(ent)}
+                        <button type="button" onClick={() => abrirEditar(ent)}
                           className="rounded-lg p-1.5 text-[#64748b] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
-                          aria-label={`Editar ${ent.nome}`}
-                          title="Editar"
-                        >
+                          aria-label={`Editar ${ent.nome}`} title="Editar">
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                             <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
                             <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
                           </svg>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => abrirExcluir(ent)}
+                        <button type="button" onClick={() => abrirExcluir(ent)}
                           className="rounded-lg p-1.5 text-[#64748b] transition-colors hover:bg-[#fef2f2] hover:text-[#dc2626]"
-                          aria-label={`Excluir ${ent.nome}`}
-                          title="Excluir"
-                        >
+                          aria-label={`Excluir ${ent.nome}`} title="Excluir">
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                             <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" />
                             <path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" />
@@ -234,48 +258,38 @@ export default function EntidadesPage() {
       {/* Modal novo/editar */}
       {(modal?.tipo === "novo" || modal?.tipo === "editar") && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4" role="dialog" aria-modal="true">
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/40"
-            onClick={fechar}
-            aria-label="Fechar"
-          />
+          <button type="button" className="absolute inset-0 bg-black/40" onClick={fechar} aria-label="Fechar" />
           <div className="relative w-full max-w-md rounded-2xl bg-white p-8 shadow-[0_8px_40px_rgba(29,78,216,0.15)]">
-            <h2
-              className="mb-6 text-[22px] font-bold text-[#1e3a8a]"
-              style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}
-            >
+            <h2 className="mb-6 text-[22px] font-bold text-[#1e3a8a]" style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}>
               {modal.tipo === "novo" ? "Nova Entidade" : "Editar Entidade"}
             </h2>
 
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">
                   Nome <span className="text-[#dc2626]">*</span>
                 </label>
-                <input
-                  ref={nomeRef}
-                  type="text"
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  placeholder="Ex: GAMA"
-                  className={inputClass}
-                  onKeyDown={(e) => { if (e.key === "Enter") salvar(); }}
-                />
+                <input ref={nomeRef} type="text" value={nome} onChange={(e) => setNome(e.target.value)}
+                  placeholder="Ex: GAMA" className={inputClass}
+                  onKeyDown={(e) => { if (e.key === "Enter") salvar(); }} />
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">
-                  Descrição
-                </label>
-                <input
-                  type="text"
-                  value={descricao}
-                  onChange={(e) => setDescricao(e.target.value)}
-                  placeholder="Ex: Casa de apoio"
-                  className={inputClass}
-                  onKeyDown={(e) => { if (e.key === "Enter") salvar(); }}
-                />
+                <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Descrição</label>
+                <input type="text" value={descricao} onChange={(e) => setDescricao(e.target.value)}
+                  placeholder="Ex: Casa de apoio" className={inputClass} />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Telefone</label>
+                <input type="tel" value={telefone} onChange={(e) => setTelefone(e.target.value)}
+                  placeholder="(00) 00000-0000" className={inputClass} />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Email</label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+                  placeholder="contato@entidade.org" className={inputClass} />
               </div>
 
               {erro && (
@@ -289,20 +303,12 @@ export default function EntidadesPage() {
             </div>
 
             <div className="mt-7 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={fechar}
-                disabled={salvando}
-                className="rounded-xl border border-[#e2e8f0] px-5 py-2.5 text-[14px] font-medium text-[#475569] transition-colors hover:bg-[#f8faff] [border-width:0.5px]"
-              >
+              <button type="button" onClick={fechar} disabled={salvando}
+                className="rounded-xl border border-[#e2e8f0] px-5 py-2.5 text-[14px] font-medium text-[#475569] transition-colors hover:bg-[#f8faff] [border-width:0.5px]">
                 Cancelar
               </button>
-              <button
-                type="button"
-                onClick={salvar}
-                disabled={salvando}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#1d4ed8] px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#1e40af] disabled:opacity-60"
-              >
+              <button type="button" onClick={salvar} disabled={salvando}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#1d4ed8] px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#1e40af] disabled:opacity-60">
                 {salvando ? (
                   <>
                     <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -321,12 +327,7 @@ export default function EntidadesPage() {
       {/* Modal confirmar exclusão */}
       {modal?.tipo === "excluir" && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4" role="dialog" aria-modal="true">
-          <button
-            type="button"
-            className="absolute inset-0 bg-black/40"
-            onClick={fechar}
-            aria-label="Fechar"
-          />
+          <button type="button" className="absolute inset-0 bg-black/40" onClick={fechar} aria-label="Fechar" />
           <div className="relative w-full max-w-sm rounded-2xl bg-white p-8 shadow-[0_8px_40px_rgba(29,78,216,0.15)]">
             <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-[#fef2f2]">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -334,9 +335,7 @@ export default function EntidadesPage() {
                 <path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" />
               </svg>
             </div>
-            <h2 className="mb-2 text-center text-[18px] font-bold text-[#1e3a8a]">
-              Excluir entidade?
-            </h2>
+            <h2 className="mb-2 text-center text-[18px] font-bold text-[#1e3a8a]">Excluir entidade?</h2>
             <p className="text-center text-[14px] text-[#475569]">
               A entidade{" "}
               <span className="font-semibold text-[#1e3a8a]">{modal.entidade.nome}</span>{" "}
@@ -353,20 +352,12 @@ export default function EntidadesPage() {
             )}
 
             <div className="mt-7 flex justify-center gap-3">
-              <button
-                type="button"
-                onClick={fechar}
-                disabled={salvando}
-                className="rounded-xl border border-[#e2e8f0] px-5 py-2.5 text-[14px] font-medium text-[#475569] transition-colors hover:bg-[#f8faff] [border-width:0.5px]"
-              >
+              <button type="button" onClick={fechar} disabled={salvando}
+                className="rounded-xl border border-[#e2e8f0] px-5 py-2.5 text-[14px] font-medium text-[#475569] transition-colors hover:bg-[#f8faff] [border-width:0.5px]">
                 Cancelar
               </button>
-              <button
-                type="button"
-                onClick={excluir}
-                disabled={salvando}
-                className="inline-flex items-center gap-2 rounded-xl bg-[#dc2626] px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#b91c1c] disabled:opacity-60"
-              >
+              <button type="button" onClick={excluir} disabled={salvando}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#dc2626] px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#b91c1c] disabled:opacity-60">
                 {salvando ? (
                   <>
                     <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">

@@ -13,6 +13,11 @@ export async function GET() {
     params.append("fields[]", "Email");
     params.append("fields[]", "Telefone");
     params.append("fields[]", "Status");
+    params.append("fields[]", "Localização");
+    params.append("fields[]", "Sobre Você");
+    params.append("fields[]", "Habilidades");
+    params.append("fields[]", "Disponibilidade");
+    params.append("fields[]", "Áreas de Interesse");
     params.append("sort[0][field]", "Nome Completo");
     params.append("sort[0][direction]", "asc");
 
@@ -25,11 +30,18 @@ export async function GET() {
 
     const data = await res.json();
     const voluntarios = (data.records ?? []).map((r) => ({
-      id:       r.id,
-      nome:     r.fields["Nome Completo"] ?? "",
-      email:    r.fields["Email"]         ?? "",
-      telefone: r.fields["Telefone"]      ?? "",
-      status:   r.fields["Status"]        ?? "Ativo",
+      id:              r.id,
+      nome:            r.fields["Nome Completo"]      ?? "",
+      email:           r.fields["Email"]              ?? "",
+      telefone:        r.fields["Telefone"]           ?? "",
+      status:          r.fields["Status"]             ?? "Ativo",
+      localizacao:     r.fields["Localização"]        ?? "",
+      sobreVoce:       r.fields["Sobre Você"]         ?? "",
+      habilidades:     r.fields["Habilidades"]        ?? "",
+      disponibilidade: r.fields["Disponibilidade"]    ?? "",
+      areasInteresse:  Array.isArray(r.fields["Áreas de Interesse"])
+                         ? r.fields["Áreas de Interesse"]
+                         : [],
     }));
 
     return NextResponse.json(voluntarios);
