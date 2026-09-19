@@ -131,27 +131,10 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, en
     characterSpacing: titleCS,
   });
 
-  // ── SUBTÍTULO "DE RECONHECIMENTO" centralizado entre os traços ────────────
-  // As linhas são posicionadas como proporção da largura da página para
-  // garantir simetria perfeita, independente da largura renderizada do texto.
-  const subSize = 11;
-  const subCS   = 2.5;
-  const subText = "DE RECONHECIMENTO";
-  const subY    = titleY - 26;
-
-  const subLX1 = width * 0.310;   // início da linha esquerda
-  const subLX2 = width * 0.398;   // fim da linha esquerda (borda interna)
-  const subRX1 = width * 0.602;   // início da linha direita (borda interna)
-  const subRX2 = width * 0.690;   // fim da linha direita
-
-  page.drawLine({ start: { x: subLX1, y: subY + 4 }, end: { x: subLX2, y: subY + 4 }, thickness: 0.7, color: OURO });
-  page.drawLine({ start: { x: subRX1, y: subY + 4 }, end: { x: subRX2, y: subY + 4 }, thickness: 0.7, color: OURO });
-  page.drawText(subText, { x: cx(subText, bold, subSize, width, subCS), y: subY, size: subSize, font: bold, color: OURO, characterSpacing: subCS });
-
   // ── TEXTO INTRODUTÓRIO ─────────────────────────────────────────────────────
   const introSize = 10.5;
   const introText = "certifica a participação de";
-  const introY    = subY - 30;
+  const introY    = titleY - 30;
   page.drawText(introText, { x: cx(introText, regular, introSize, width), y: introY, size: introSize, font: regular, color: AZUL_TITULO });
   // ── NOME (FONTE SCRIPT) ────────────────────────────────────────────────────
   const nameSize = 46;
@@ -204,7 +187,7 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, en
   if (horas > 0) {
     const horasText = `com duração de ${horas} ${horas === 1 ? "hora" : "horas"}`;
     bodyY -= bodyLineH;
-    page.drawText(horasText, { x: cx(horasText, regular, bodySize, width), y: bodyY, size: bodySize, font: regular, color: AZUL_TITULO });
+    page.drawText(horasText, { x: cx(horasText, bold, bodySize, width), y: bodyY, size: bodySize, font: bold, color: AZUL_TITULO });
   }
 
   // Linha de encerramento
@@ -212,14 +195,9 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, en
   bodyY -= bodyLineH;
   page.drawText(closingText, { x: cx(closingText, regular, bodySize, width), y: bodyY, size: bodySize, font: regular, color: AZUL_TITULO });
 
-  // ── FRASE DE RECONHECIMENTO ────────────────────────────────────────────────
-  const ackText = "Nosso sincero reconhecimento e gratidão!";
-  const ackY    = bodyY - 22;
-  page.drawText(ackText, { x: cx(ackText, italic, 11, width), y: ackY, size: 11, font: italic, color: OURO });
-
   // ── DATA ───────────────────────────────────────────────────────────────────
   const dateText = `Pato Branco, ${dataEmissao}`;
-  const dateY    = ackY - 22;
+  const dateY    = bodyY - 22;
   page.drawText(dateText, { x: cx(dateText, regular, 10.5, width), y: dateY, size: 10.5, font: regular, color: AZUL_TITULO });
 
   // ── ASSINATURAS ────────────────────────────────────────────────────────────
