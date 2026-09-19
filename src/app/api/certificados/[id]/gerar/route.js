@@ -3,7 +3,7 @@ import { gerarCertificadoPdf } from "@/lib/gerarCertificadoPdf";
 
 export const runtime = "nodejs";
 
-const TABLE_ENTIDADES = "tblPIOP4H76gOOPSe";
+const TABLE_ENTIDADES = process.env.AIRTABLE_TABLE_ENTIDADES ?? "tblPIOP4H76gOOPSe";
 
 async function buscarNomeEntidade(apiKey, baseId, recordId) {
   try {
