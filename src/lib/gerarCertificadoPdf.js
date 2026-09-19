@@ -10,7 +10,6 @@ const AZUL_FUNDO  = rgb(0.082, 0.208, 0.529);
 const BRANCO      = rgb(1, 1, 1);
 const AZUL_TITULO = rgb(0.063, 0.184, 0.478);
 const OURO        = rgb(0.784, 0.639, 0.082);
-const CINZA       = rgb(0.231, 0.231, 0.231);
 
 /**
  * Centraliza texto horizontalmente considerando character spacing.
@@ -69,24 +68,40 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, da
     color: BRANCO,
   });
 
-  // ── MOLDURA DOURADA DUPLA ──────────────────────────────────────────────────
+  // ── MOLDURA DOURADA ────────────────────────────────────────────────────────
+  // Retângulo externo (linha mais grossa)
   const B1 = 34;
-  const B2 = 39;
-  page.drawRectangle({ x: B1, y: B1, width: width - B1 * 2, height: height - B1 * 2, borderColor: OURO, borderWidth: 1.2 });
-  page.drawRectangle({ x: B2, y: B2, width: width - B2 * 2, height: height - B2 * 2, borderColor: OURO, borderWidth: 0.45 });
+  page.drawRectangle({
+    x: B1, y: B1,
+    width: width - B1 * 2, height: height - B1 * 2,
+    borderColor: OURO, borderWidth: 1.0,
+  });
+  // Retângulo interno (linha fina)
+  const B2 = 40;
+  page.drawRectangle({
+    x: B2, y: B2,
+    width: width - B2 * 2, height: height - B2 * 2,
+    borderColor: OURO, borderWidth: 0.4,
+  });
 
-  // Cantos Art Deco (marcas em L em cada canto)
-  const CL = 22;
-  const corners = [
-    { h: [B1, height - B1, B1 + CL, height - B1],      v: [B1, height - B1, B1, height - B1 - CL] },
-    { h: [width - B1, height - B1, width - B1 - CL, height - B1], v: [width - B1, height - B1, width - B1, height - B1 - CL] },
-    { h: [B1, B1, B1 + CL, B1],                         v: [B1, B1, B1, B1 + CL] },
-    { h: [width - B1, B1, width - B1 - CL, B1],         v: [width - B1, B1, width - B1, B1 + CL] },
-  ];
-  for (const c of corners) {
-    page.drawLine({ start: { x: c.h[0], y: c.h[1] }, end: { x: c.h[2], y: c.h[3] }, thickness: 2, color: OURO });
-    page.drawLine({ start: { x: c.v[0], y: c.v[1] }, end: { x: c.v[2], y: c.v[3] }, thickness: 2, color: OURO });
-  }
+  // Cantos Art Deco: colchetes em L dentro do retângulo externo
+  // Posicionados levemente dentro de B1, criando um bracket visível
+  const CC = B1 + 9;  // posição de início do bracket (dentro de B1)
+  const CL = 20;      // comprimento de cada braço do L
+  const CT = 1.5;     // espessura das marcas de canto
+
+  // [top-left]
+  page.drawLine({ start: { x: CC,         y: height - CC      }, end: { x: CC + CL,     y: height - CC      }, thickness: CT, color: OURO });
+  page.drawLine({ start: { x: CC,         y: height - CC      }, end: { x: CC,           y: height - CC - CL }, thickness: CT, color: OURO });
+  // [top-right]
+  page.drawLine({ start: { x: width - CC, y: height - CC      }, end: { x: width-CC-CL,  y: height - CC      }, thickness: CT, color: OURO });
+  page.drawLine({ start: { x: width - CC, y: height - CC      }, end: { x: width - CC,   y: height - CC - CL }, thickness: CT, color: OURO });
+  // [bottom-left]
+  page.drawLine({ start: { x: CC,         y: CC               }, end: { x: CC + CL,     y: CC               }, thickness: CT, color: OURO });
+  page.drawLine({ start: { x: CC,         y: CC               }, end: { x: CC,           y: CC + CL          }, thickness: CT, color: OURO });
+  // [bottom-right]
+  page.drawLine({ start: { x: width - CC, y: CC               }, end: { x: width-CC-CL,  y: CC               }, thickness: CT, color: OURO });
+  page.drawLine({ start: { x: width - CC, y: CC               }, end: { x: width - CC,   y: CC + CL          }, thickness: CT, color: OURO });
 
   // ── LOGO ROTARY ────────────────────────────────────────────────────────────
   let rotaryImg;
@@ -116,25 +131,27 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, da
     characterSpacing: titleCS,
   });
 
-  // ── SUBTÍTULO "DE RECONHECIMENTO" ─────────────────────────────────────────
+  // ── SUBTÍTULO "DE RECONHECIMENTO" centralizado entre os traços ────────────
   const subSize = 11;
   const subCS   = 2.5;
   const subText = "DE RECONHECIMENTO";
-  const subW    = bold.widthOfTextAtSize(subText, subSize) + subCS * (subText.length - 1);
-  const subX    = (width - subW) / 2;
-  const subY    = titleY - 26;
-
   const lineLen = 70;
   const lineGap = 10;
-  page.drawLine({ start: { x: subX - lineGap - lineLen, y: subY + 4 }, end: { x: subX - lineGap,        y: subY + 4 }, thickness: 0.7, color: OURO });
-  page.drawLine({ start: { x: subX + subW + lineGap,    y: subY + 4 }, end: { x: subX + subW + lineGap + lineLen, y: subY + 4 }, thickness: 0.7, color: OURO });
+  const subTextW = bold.widthOfTextAtSize(subText, subSize) + subCS * (subText.length - 1);
+  const totalSubW = lineLen + lineGap + subTextW + lineGap + lineLen;
+  const blockStartX = (width - totalSubW) / 2;
+  const subX = blockStartX + lineLen + lineGap;
+  const subY = titleY - 26;
+
+  page.drawLine({ start: { x: blockStartX,               y: subY + 4 }, end: { x: blockStartX + lineLen,     y: subY + 4 }, thickness: 0.7, color: OURO });
+  page.drawLine({ start: { x: subX + subTextW + lineGap, y: subY + 4 }, end: { x: subX + subTextW + lineGap + lineLen, y: subY + 4 }, thickness: 0.7, color: OURO });
   page.drawText(subText, { x: subX, y: subY, size: subSize, font: bold, color: OURO, characterSpacing: subCS });
 
   // ── TEXTO INTRODUTÓRIO ─────────────────────────────────────────────────────
   const introSize = 10.5;
   const introText = "o Rotary Club de Pato Branco tem a honra de reconhecer o talento e dedicação de";
   const introY    = subY - 30;
-  page.drawText(introText, { x: cx(introText, regular, introSize, width), y: introY, size: introSize, font: regular, color: CINZA });
+  page.drawText(introText, { x: cx(introText, regular, introSize, width), y: introY, size: introSize, font: regular, color: AZUL_TITULO });
 
   // ── NOME (FONTE SCRIPT) ────────────────────────────────────────────────────
   const nameSize = 46;
@@ -146,7 +163,7 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, da
   // Sublinhado dourado
   const underlineY = nameY - 10;
   page.drawLine({
-    start: { x: nameX - 15, y: underlineY },
+    start: { x: nameX - 15,       y: underlineY },
     end:   { x: nameX + nameW + 15, y: underlineY },
     thickness: 1.2,
     color: OURO,
@@ -161,13 +178,21 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, da
 
   // "pela participação no"
   const intro2 = "pela participação no";
-  page.drawText(intro2, { x: cx(intro2, regular, bodySize, width), y: bodyY, size: bodySize, font: regular, color: CINZA });
+  page.drawText(intro2, { x: cx(intro2, regular, bodySize, width), y: bodyY, size: bodySize, font: regular, color: AZUL_TITULO });
 
   // Nome da atividade em negrito
   const actLines = wrapText(atividade, bold, bodySize + 0.5, contentW - 60);
   for (const line of actLines) {
     bodyY -= bodyLineH;
-    page.drawText(line, { x: cx(line, bold, bodySize + 0.5, width), y: bodyY, size: bodySize + 0.5, font: bold, color: CINZA });
+    page.drawText(line, { x: cx(line, bold, bodySize + 0.5, width), y: bodyY, size: bodySize + 0.5, font: bold, color: AZUL_TITULO });
+  }
+
+  // Horas (exibido apenas quando preenchido)
+  const horas = Number(qtdeHoras);
+  if (horas > 0) {
+    const horasText = `${horas} ${horas === 1 ? "hora" : "horas"} de atividade voluntária`;
+    bodyY -= bodyLineH;
+    page.drawText(horasText, { x: cx(horasText, regular, bodySize, width), y: bodyY, size: bodySize, font: regular, color: AZUL_TITULO });
   }
 
   // Linhas descritivas fixas
@@ -179,7 +204,7 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, da
     const wrapped = wrapText(dline, regular, bodySize, contentW);
     for (const wl of wrapped) {
       bodyY -= bodyLineH;
-      page.drawText(wl, { x: cx(wl, regular, bodySize, width), y: bodyY, size: bodySize, font: regular, color: CINZA });
+      page.drawText(wl, { x: cx(wl, regular, bodySize, width), y: bodyY, size: bodySize, font: regular, color: AZUL_TITULO });
     }
   }
 
@@ -191,7 +216,7 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, da
   // ── DATA ───────────────────────────────────────────────────────────────────
   const dateText = `Pato Branco, ${dataEmissao}`;
   const dateY    = ackY - 22;
-  page.drawText(dateText, { x: cx(dateText, regular, 10.5, width), y: dateY, size: 10.5, font: regular, color: CINZA });
+  page.drawText(dateText, { x: cx(dateText, regular, 10.5, width), y: dateY, size: 10.5, font: regular, color: AZUL_TITULO });
 
   // ── ASSINATURAS ────────────────────────────────────────────────────────────
   const sigLineW = 145;
@@ -199,23 +224,28 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, da
   const leftCx   = width * 0.27;
   const rightCx  = width * 0.73;
 
-  function drawSignature(centerX, labelLines, year) {
+  function drawSignature(centerX, label, year) {
+    // Traço dourado
     page.drawLine({
       start: { x: centerX - sigLineW / 2, y: sigY },
       end:   { x: centerX + sigLineW / 2, y: sigY },
-      thickness: 0.5, color: CINZA,
+      thickness: 0.6, color: OURO,
     });
-    let labelY = sigY - 15;
-    for (const lbl of labelLines) {
-      const lblSize = 8.5;
-      page.drawText(lbl, { x: centerX - bold.widthOfTextAtSize(lbl, lblSize) / 2, y: labelY, size: lblSize, font: bold, color: AZUL_TITULO });
-      labelY -= 12;
-    }
-    page.drawText(year, { x: centerX - regular.widthOfTextAtSize(year, 8.5) / 2, y: labelY, size: 8.5, font: regular, color: CINZA });
+    const lblSize = 8.5;
+    page.drawText(label, {
+      x: centerX - bold.widthOfTextAtSize(label, lblSize) / 2,
+      y: sigY - 15,
+      size: lblSize, font: bold, color: AZUL_TITULO,
+    });
+    page.drawText(year, {
+      x: centerX - regular.widthOfTextAtSize(year, 8.5) / 2,
+      y: sigY - 27,
+      size: 8.5, font: regular, color: AZUL_TITULO,
+    });
   }
 
-  drawSignature(leftCx,  ["PRESIDENTE"],                         "2025-26");
-  drawSignature(rightCx, ["COMISSÃO DO LEILÃO DE ARTES"],        "2025-26");
+  drawSignature(leftCx,  "PRESIDENTE",                   "2025-26");
+  drawSignature(rightCx, "COMISSÃO DO LEILÃO DE ARTES",  "2025-26");
 
   const pdfBytes = await pdfDoc.save();
   return Buffer.from(pdfBytes);
