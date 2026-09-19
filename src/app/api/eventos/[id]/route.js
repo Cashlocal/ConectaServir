@@ -11,12 +11,13 @@ export async function PATCH(req, { params }) {
   }
 
   try {
-    const { nome, descricao, data } = await req.json();
+    const { nome, descricao, data, bannerUrl } = await req.json();
 
     const fields = {};
     if (nome !== undefined) fields["Nome Evento"] = nome.trim();
     if (descricao !== undefined) fields["Descrição"] = descricao.trim();
     if (data !== undefined) fields["Data"] = data || null;
+    if (bannerUrl !== undefined) fields["Banner"] = bannerUrl ? [{ url: bannerUrl }] : [];
 
     const res = await fetch(
       `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}/${id}`,
@@ -40,6 +41,7 @@ export async function PATCH(req, { params }) {
       nome: result.fields["Nome Evento"] ?? "",
       descricao: result.fields["Descrição"] ?? "",
       data: result.fields["Data"] ?? null,
+      banner: result.fields["Banner"]?.[0]?.url ?? null,
     });
   } catch {
     return NextResponse.json({ error: "Erro inesperado." }, { status: 500 });

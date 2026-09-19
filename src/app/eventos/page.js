@@ -330,28 +330,37 @@ export default function EventosPage() {
                 key={ev.id}
                 className="mb-2.5 flex gap-4 rounded-2xl border border-[#e2e8f0] bg-white px-4 py-3.5 transition-all [border-width:0.5px] last:mb-0 hover:border-[#bfdbfe] hover:shadow-[0_2px_12px_rgba(29,78,216,0.06)] md:p-5"
               >
-                <div
-                  className={`flex w-11 shrink-0 flex-col items-center justify-center rounded-[10px] border border-[#93c5fd] px-1.5 py-2 text-center [border-width:0.5px] md:w-[52px] ${
-                    isEvToday
-                      ? "bg-[#1d4ed8] [&_span]:text-white"
-                      : "bg-[#eff6ff]"
-                  }`}
-                >
-                  <span
-                    className={`text-xl font-semibold leading-none text-[#1d4ed8] md:text-2xl ${
-                      isEvToday ? "!text-white" : ""
+                {ev.banner ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={ev.banner}
+                    alt={ev.nome}
+                    className="h-16 w-16 rounded-[10px] object-cover shrink-0"
+                  />
+                ) : (
+                  <div
+                    className={`flex w-11 shrink-0 flex-col items-center justify-center rounded-[10px] border border-[#93c5fd] px-1.5 py-2 text-center [border-width:0.5px] md:w-[52px] ${
+                      isEvToday
+                        ? "bg-[#1d4ed8] [&_span]:text-white"
+                        : "bg-[#eff6ff]"
                     }`}
                   >
-                    {p?.dia}
-                  </span>
-                  <span
-                    className={`mt-1 text-[10px] font-medium uppercase text-[#1d4ed8] md:text-[11px] ${
-                      isEvToday ? "!text-white" : ""
-                    }`}
-                  >
-                    {p != null ? MESES_ABREV[p.mes] : ""}
-                  </span>
-                </div>
+                    <span
+                      className={`text-xl font-semibold leading-none text-[#1d4ed8] md:text-2xl ${
+                        isEvToday ? "!text-white" : ""
+                      }`}
+                    >
+                      {p?.dia}
+                    </span>
+                    <span
+                      className={`mt-1 text-[10px] font-medium uppercase text-[#1d4ed8] md:text-[11px] ${
+                        isEvToday ? "!text-white" : ""
+                      }`}
+                    >
+                      {p != null ? MESES_ABREV[p.mes] : ""}
+                    </span>
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-[15px] font-semibold text-[#1e3a8a]">

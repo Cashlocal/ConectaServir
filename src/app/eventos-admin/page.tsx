@@ -8,6 +8,7 @@ type Evento = {
   nome: string;
   descricao: string;
   data: string | null;
+  banner: string | null;
 };
 
 type ModalState =
@@ -56,6 +57,7 @@ export default function EventosAdminPage() {
   const [nome, setNome] = useState("");
   const [descricao, setDescricao] = useState("");
   const [dataLocal, setDataLocal] = useState("");
+  const [bannerUrl, setBannerUrl] = useState("");
 
   const nomeRef = useRef<HTMLInputElement>(null);
 
@@ -99,7 +101,7 @@ export default function EventosAdminPage() {
   }
 
   function abrirNovo() {
-    setNome(""); setDescricao(""); setDataLocal(""); setErro("");
+    setNome(""); setDescricao(""); setDataLocal(""); setBannerUrl(""); setErro("");
     setModal({ tipo: "novo" });
   }
 
@@ -107,6 +109,7 @@ export default function EventosAdminPage() {
     setNome(ev.nome);
     setDescricao(ev.descricao);
     setDataLocal(isoParaDatetimeLocal(ev.data));
+    setBannerUrl(ev.banner ?? "");
     setErro("");
     setModal({ tipo: "editar", evento: ev });
   }
@@ -130,6 +133,8 @@ export default function EventosAdminPage() {
 
       const body: Record<string, string> = { nome: nome.trim(), descricao: descricao.trim() };
       if (dataLocal) body.data = datetimeLocalParaIso(dataLocal);
+      if (bannerUrl.trim()) body.bannerUrl = bannerUrl.trim();
+      else if (isEditar) body.bannerUrl = "";
 
       const res = await fetch(url, {
         method,
@@ -249,6 +254,7 @@ export default function EventosAdminPage() {
                   <th className="px-6 py-3.5 text-left text-[12px] font-semibold uppercase tracking-wide text-[#64748b]">Nome</th>
                   <th className="px-6 py-3.5 text-left text-[12px] font-semibold uppercase tracking-wide text-[#64748b]">Data/Hora</th>
                   <th className="hidden px-6 py-3.5 text-left text-[12px] font-semibold uppercase tracking-wide text-[#64748b] md:table-cell">Descrição</th>
+                  <th className="hidden px-6 py-3.5 text-left text-[12px] font-semibold uppercase tracking-wide text-[#64748b] sm:table-cell">Banner</th>
                   <th className="w-28 px-6 py-3.5 text-right text-[12px] font-semibold uppercase tracking-wide text-[#64748b]">Ações</th>
                 </tr>
               </thead>
@@ -259,6 +265,14 @@ export default function EventosAdminPage() {
                     <td className="whitespace-nowrap px-6 py-4 text-[#475569]">{formatarDataHora(ev.data)}</td>
                     <td className="hidden max-w-[320px] px-6 py-4 text-[#475569] md:table-cell">
                       <span className="line-clamp-2">{ev.descricao || <span className="text-[#cbd5e1]">—</span>}</span>
+                    </td>
+                    <td className="hidden px-6 py-4 sm:table-cell">
+                      {ev.banner ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={ev.banner} alt={ev.nome} className="h-10 w-10 rounded object-cover" />
+                      ) : (
+                        <span className="text-[#cbd5e1]">—</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1">
@@ -344,6 +358,27 @@ export default function EventosAdminPage() {
                   rows={4}
                   className={`${inputClass} resize-none`}
                 />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">URL do Banner (imagem)</label>
+                <input
+                  type="url"
+                  value={bannerUrl}
+                  onChange={(e) => setBannerUrl(e.target.value)}
+                  placeholder="https://..."
+                  className={inputClass}
+                />
+                {bannerUrl.trim() && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={bannerUrl.trim()}
+                    alt="Pré-visualização do banner"
+                    className="mt-2 h-24 w-full rounded-xl object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    onLoad={(e) => { (e.target as HTMLImageElement).style.display = "block"; }}
+                  />
+                )}
               </div>
 
               {erro && (

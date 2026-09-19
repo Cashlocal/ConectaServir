@@ -31,6 +31,7 @@ export async function GET() {
       nome: r.fields["Nome Evento"] ?? "",
       descricao: r.fields["Descrição"] ?? "",
       data: r.fields["Data"] ?? null,
+      banner: r.fields["Banner"]?.[0]?.url ?? null,
     }));
 
     return NextResponse.json({ records });
@@ -49,7 +50,7 @@ export async function POST(req) {
   }
 
   try {
-    const { nome, descricao, data } = await req.json();
+    const { nome, descricao, data, bannerUrl } = await req.json();
 
     if (!nome?.trim()) {
       return NextResponse.json({ error: "O campo Nome Evento é obrigatório." }, { status: 400 });
@@ -58,6 +59,7 @@ export async function POST(req) {
     const fields = { "Nome Evento": nome.trim() };
     if (descricao !== undefined) fields["Descrição"] = descricao.trim();
     if (data) fields["Data"] = data;
+    if (bannerUrl) fields["Banner"] = [{ url: bannerUrl }];
 
     const res = await fetch(
       `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}`,
@@ -81,6 +83,7 @@ export async function POST(req) {
       nome: result.fields["Nome Evento"] ?? "",
       descricao: result.fields["Descrição"] ?? "",
       data: result.fields["Data"] ?? null,
+      banner: result.fields["Banner"]?.[0]?.url ?? null,
     });
   } catch {
     return NextResponse.json({ error: "Erro inesperado." }, { status: 500 });
