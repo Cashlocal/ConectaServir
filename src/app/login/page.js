@@ -105,27 +105,55 @@ export default function LoginPage() {
               </span>
               .
             </p>
-            <button
-              type="button"
-              onClick={() => router.push("/certificados")}
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#1a44a6] px-6 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#153575]"
-            >
-              Ver certificados
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
+            <div className="mt-6 flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => router.push("/certificados")}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1a44a6] px-6 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#153575]"
               >
-                <line x1="5" y1="12" x2="19" y2="12" />
-                <polyline points="12 5 19 12 12 19" />
-              </svg>
-            </button>
+                Ver certificados
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
+                </svg>
+              </button>
+
+              <div style={{ borderTop: "0.5px solid #e2e8f0" }} />
+
+              <button
+                type="button"
+                onClick={() => router.push("/voluntarios-admin")}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#bfdbfe] bg-[#f8faff] px-6 py-2.5 text-[14px] font-semibold text-[#1e3a8a] transition-colors hover:bg-[#eff6ff] [border-width:0.5px]"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+                </svg>
+                Voluntários
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push("/entidades")}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#bfdbfe] bg-[#f8faff] px-6 py-2.5 text-[14px] font-semibold text-[#1e3a8a] transition-colors hover:bg-[#eff6ff] [border-width:0.5px]"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+                Entidades
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push("/demandas")}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[#bfdbfe] bg-[#f8faff] px-6 py-2.5 text-[14px] font-semibold text-[#1e3a8a] transition-colors hover:bg-[#eff6ff] [border-width:0.5px]"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+                  <rect x="9" y="3" width="6" height="4" rx="1" />
+                  <line x1="9" y1="12" x2="15" y2="12" /><line x1="9" y1="16" x2="13" y2="16" />
+                </svg>
+                Demandas
+              </button>
+            </div>
           </div>
         ) : (
 
