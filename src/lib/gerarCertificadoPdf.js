@@ -121,13 +121,13 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, en
   const titleSize = 38;
   const titleCS   = 5;
   const titleText = "CERTIFICADO";
-  const titleY    = logoY - 52;
+  const titleY    = logoY - 70;
   page.drawText(titleText, {
     x: cx(titleText, bold, titleSize, width, titleCS),
     y: titleY,
     size: titleSize,
     font: bold,
-    color: AZUL_TITULO,
+    color: OURO,
     characterSpacing: titleCS,
   });
 
@@ -182,12 +182,17 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, en
     }
   }
 
-  // Carga horária (exibida apenas quando preenchida)
+  // Carga horária: "com duração de " regular + "X horas" negrito, centralizados juntos
   const horas = Number(qtdeHoras);
   if (horas > 0) {
-    const horasText = `com duração de ${horas} ${horas === 1 ? "hora" : "horas"}`;
+    const prefix   = "com duração de ";
+    const suffix   = `${horas} ${horas === 1 ? "hora" : "horas"}`;
+    const prefixW  = regular.widthOfTextAtSize(prefix, bodySize);
+    const suffixW  = bold.widthOfTextAtSize(suffix, bodySize);
+    const startX   = (width - prefixW - suffixW) / 2;
     bodyY -= bodyLineH;
-    page.drawText(horasText, { x: cx(horasText, bold, bodySize, width), y: bodyY, size: bodySize, font: bold, color: AZUL_TITULO });
+    page.drawText(prefix, { x: startX,            y: bodyY, size: bodySize, font: regular, color: AZUL_TITULO });
+    page.drawText(suffix, { x: startX + prefixW,  y: bodyY, size: bodySize, font: bold,    color: AZUL_TITULO });
   }
 
   // Linha de encerramento
@@ -197,7 +202,7 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, en
 
   // ── DATA ───────────────────────────────────────────────────────────────────
   const dateText = `Pato Branco, ${dataEmissao}`;
-  const dateY    = bodyY - 22;
+  const dateY    = bodyY - 38;
   page.drawText(dateText, { x: cx(dateText, regular, 10.5, width), y: dateY, size: 10.5, font: regular, color: AZUL_TITULO });
 
   // ── ASSINATURAS ────────────────────────────────────────────────────────────
