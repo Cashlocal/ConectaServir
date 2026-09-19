@@ -58,8 +58,6 @@ export default function EventosAdminPage() {
   const [descricao, setDescricao] = useState("");
   const [dataLocal, setDataLocal] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
-  const [bannerFile, setBannerFile] = useState<File | null>(null);
-  const [bannerPreview, setBannerPreview] = useState("");
 
   const nomeRef = useRef<HTMLInputElement>(null);
 
@@ -103,7 +101,7 @@ export default function EventosAdminPage() {
   }
 
   function abrirNovo() {
-    setNome(""); setDescricao(""); setDataLocal(""); setBannerUrl(""); setBannerFile(null); setBannerPreview(""); setErro("");
+    setNome(""); setDescricao(""); setDataLocal(""); setBannerUrl(""); setErro("");
     setModal({ tipo: "novo" });
   }
 
@@ -112,8 +110,6 @@ export default function EventosAdminPage() {
     setDescricao(ev.descricao);
     setDataLocal(isoParaDatetimeLocal(ev.data));
     setBannerUrl(ev.banner ?? "");
-    setBannerFile(null);
-    setBannerPreview(ev.banner ?? "");
     setErro("");
     setModal({ tipo: "editar", evento: ev });
   }
@@ -123,7 +119,7 @@ export default function EventosAdminPage() {
     setModal({ tipo: "excluir", evento: ev });
   }
 
-  function fechar() { setModal(null); setErro(""); setBannerFile(null); setBannerPreview(""); }
+  function fechar() { setModal(null); setErro(""); setBannerUrl(""); }
 
   async function salvar() {
     if (!nome.trim()) { setErro("O campo Nome Evento é obrigatório."); return; }
@@ -135,20 +131,9 @@ export default function EventosAdminPage() {
       const url = isEditar ? `/api/eventos/${eventoId}` : "/api/eventos";
       const method = isEditar ? "PATCH" : "POST";
 
-      let finalBannerUrl = bannerUrl;
-
-      if (bannerFile) {
-        const fd = new FormData();
-        fd.append("file", bannerFile);
-        const uploadRes = await fetch("/api/upload-banner", { method: "POST", body: fd });
-        const uploadData = await uploadRes.json();
-        if (!uploadRes.ok) { setErro(uploadData.error ?? "Erro ao fazer upload da imagem."); return; }
-        finalBannerUrl = uploadData.url;
-      }
-
       const body: Record<string, string> = { nome: nome.trim(), descricao: descricao.trim() };
       if (dataLocal) body.data = datetimeLocalParaIso(dataLocal);
-      if (finalBannerUrl.trim()) body.bannerUrl = finalBannerUrl.trim();
+      if (bannerUrl.trim()) body.bannerUrl = bannerUrl.trim();
       else if (isEditar) body.bannerUrl = "";
 
       const res = await fetch(url, {
@@ -376,39 +361,17 @@ export default function EventosAdminPage() {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Banner do Evento</label>
+                <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">URL do Banner (imagem)</label>
                 <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] ?? null;
-                    setBannerFile(file);
-                    if (file) {
-                      setBannerPreview(URL.createObjectURL(file));
-                    }
-                  }}
-                  className={`${inputClass} cursor-pointer file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-[#dbeafe] file:px-3 file:py-1 file:text-[13px] file:font-medium file:text-[#1d4ed8]`}
+                  type="url"
+                  value={bannerUrl}
+                  onChange={(e) => setBannerUrl(e.target.value)}
+                  placeholder="https://exemplo.com/imagem.jpg"
+                  className={inputClass}
                 />
-                {bannerPreview && (
-                  <div className="relative mt-2 inline-block w-full">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={bannerPreview}
-                      alt="Pré-visualização do banner"
-                      className="h-24 w-full rounded-xl object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => { setBannerFile(null); setBannerPreview(""); setBannerUrl(""); }}
-                      className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
-                      title="Remover banner"
-                      aria-label="Remover banner"
-                    >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                    </button>
-                  </div>
+                {bannerUrl && bannerUrl.startsWith("http") && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={bannerUrl} alt="Preview" className="mt-2 h-24 w-full rounded-xl object-cover" />
                 )}
               </div>
 
