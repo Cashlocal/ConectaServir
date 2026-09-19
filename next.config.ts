@@ -18,6 +18,11 @@ const nextConfig: NextConfig = {
         hostname: "private-us-east-1.manuscdn.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "*.public.blob.vercel-storage.com",
+        pathname: "/**",
+      },
     ],
   },
   async redirects() {

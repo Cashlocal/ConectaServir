@@ -12,6 +12,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@vercel/blob": "^1.1.1",
     "form-data": "^4.0.6",
     "next": "16.2.2",
     "pdf-lib": "^1.17.1",
