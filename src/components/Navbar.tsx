@@ -184,6 +184,16 @@ export function Navbar() {
                     <div style={{ borderTop: "0.5px solid #e2e8f0" }} />
 
                     <Link
+                      href="/voluntarios-admin"
+                      onClick={() => setDropdownOpen(false)}
+                      className="block px-4 py-2.5 text-[14px] text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
+                    >
+                      Voluntários
+                    </Link>
+
+                    <div style={{ borderTop: "0.5px solid #e2e8f0" }} />
+
+                    <Link
                       href="/entidades"
                       onClick={() => setDropdownOpen(false)}
                       className="block px-4 py-2.5 text-[14px] text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
@@ -310,6 +320,13 @@ export function Navbar() {
                     onClick={() => setOpen(false)}
                   >
                     Lançar Certificado
+                  </Link>
+                  <Link
+                    href="/voluntarios-admin"
+                    className="rounded-lg px-4 py-3 text-[15px] font-medium text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
+                    onClick={() => setOpen(false)}
+                  >
+                    Voluntários
                   </Link>
                   <Link
                     href="/entidades"

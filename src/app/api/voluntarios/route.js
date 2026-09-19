@@ -58,6 +58,7 @@ export async function POST(request) {
       [AIRTABLE_FIELDS.disponibilidade]: (disponibilidade ?? "").trim(),
       /** Multiple select: sempre array de strings, ex.: ["Saúde", "Educação"] */
       [AIRTABLE_FIELDS.areasInteresse]: areas,
+      Status: "Ativo",
     };
 
     const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}`;
