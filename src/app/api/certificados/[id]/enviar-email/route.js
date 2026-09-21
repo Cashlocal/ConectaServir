@@ -106,6 +106,16 @@ export async function POST(req, { params }) {
       );
     }
 
+    // Atualiza status para "Emitido" no Airtable
+    await fetch(
+      `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}/${recordId}`,
+      {
+        method:  "PATCH",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body:    JSON.stringify({ fields: { Status: "Emitido" } }),
+      }
+    ).catch(() => {});
+
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("Erro ao enviar email:", err);
