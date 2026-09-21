@@ -99,6 +99,25 @@ export default function UsuariosAdminPage() {
         finalFotoUrl = uploadData.url;
       }
 
+      const isNovo = modal.usuario.id === "__novo__";
+
+      if (isNovo) {
+        const body: Record<string, unknown> = { nome, email, senha, clube };
+        if (finalFotoUrl !== undefined) body.fotoUrl = finalFotoUrl;
+
+        const res  = await fetch("/api/usuarios", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) { setErro(data.error ?? "Erro ao criar usuário."); return; }
+
+        setUsuarios((prev) => [...prev, data].sort((a, b) => a.nome.localeCompare(b.nome)));
+        fechar();
+        return;
+      }
+
       const body: Record<string, unknown> = { nome, email, senha, clube };
       if (finalFotoUrl !== undefined) body.fotoUrl = finalFotoUrl;
 
@@ -188,6 +207,20 @@ export default function UsuariosAdminPage() {
           </h1>
           <p className="mt-1 text-base text-[#475569]">Gerencie os usuários do sistema</p>
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            setNome(""); setEmail(""); setSenha(""); setClube("");
+            setFotoAtual(null); setFotoFile(null); setFotoPreview(""); setErro("");
+            setModal({ tipo: "editar", usuario: { id: "__novo__", nome: "", email: "", senha: "", clube: "", status: "Ativo", foto: null } });
+          }}
+          className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[#1d4ed8] px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#1e40af]"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          Novo Usuário
+        </button>
       </div>
 
       {/* Busca */}
@@ -298,7 +331,7 @@ export default function UsuariosAdminPage() {
           <div className="relative w-full max-w-md overflow-y-auto rounded-2xl bg-white p-8 shadow-[0_8px_40px_rgba(29,78,216,0.15)]" style={{ maxHeight: "90vh" }}>
             <h2 className="mb-6 text-[22px] font-bold text-[#1e3a8a]"
               style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}>
-              Editar Usuário
+              {modal.usuario.id === "__novo__" ? "Novo Usuário" : "Editar Usuário"}
             </h2>
 
             {/* Foto */}

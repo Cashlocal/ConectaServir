@@ -122,7 +122,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => router.push("/projetos-admin")}
-                  className="col-span-2 inline-flex items-center justify-center gap-2 rounded-xl border border-[#bfdbfe] bg-[#f8faff] px-3 py-2.5 text-[13px] font-semibold text-[#1e3a8a] transition-colors hover:bg-[#eff6ff] [border-width:0.5px]"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#bfdbfe] bg-[#f8faff] px-3 py-2.5 text-[13px] font-semibold text-[#1e3a8a] transition-colors hover:bg-[#eff6ff] [border-width:0.5px]"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
@@ -174,6 +174,18 @@ export default function LoginPage() {
                     <line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
                   </svg>
                   Eventos
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => router.push("/usuarios-admin")}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#bfdbfe] bg-[#f8faff] px-3 py-2.5 text-[13px] font-semibold text-[#1e3a8a] transition-colors hover:bg-[#eff6ff] [border-width:0.5px]"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2" />
+                    <path d="M16 11l2 2 4-4" />
+                  </svg>
+                  Usuários
                 </button>
               </div>
             </div>
