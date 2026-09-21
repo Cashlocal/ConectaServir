@@ -61,7 +61,7 @@ export default function HomePage() {
                 href="/projetos"
                 className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#1a44a6] px-6 py-3 text-base font-medium text-white transition-colors hover:bg-[#153575]"
               >
-                Cadastrar Projeto
+                Conhecer Projetos
                 <span aria-hidden>→</span>
               </Link>
               <Link
@@ -207,7 +207,7 @@ export default function HomePage() {
               href="/projetos"
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-white px-7 py-3 text-base font-semibold text-[#1a44a6] transition-opacity hover:opacity-95"
             >
-              Cadastrar Projeto
+              Conhecer Projetos
               <span aria-hidden>→</span>
             </Link>
             <Link
