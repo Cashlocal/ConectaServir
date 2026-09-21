@@ -115,16 +115,27 @@ export function VoluntarioForm() {
         <p className="mt-2 text-sm text-[#475569]">
           Em breve entraremos em contato.
         </p>
-        <button
-          type="button"
-          onClick={() => {
-            setStatus("idle");
-            setFieldErrors({});
-          }}
-          className="mt-6 rounded-lg border-2 border-[#1a44a6] bg-white px-6 py-2.5 text-sm font-semibold text-[#1a44a6] transition-colors hover:bg-[#eef3fc]"
-        >
-          Novo cadastro
-        </button>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => {
+              setStatus("idle");
+              setFieldErrors({});
+            }}
+            className="rounded-lg border-2 border-[#1a44a6] bg-white px-6 py-2.5 text-sm font-semibold text-[#1a44a6] transition-colors hover:bg-[#eef3fc]"
+          >
+            Novo cadastro
+          </button>
+          <a
+            href="/projetos"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#1a44a6] px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#153575]"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
+            </svg>
+            Conheça os Projetos Sociais
+          </a>
+        </div>
       </div>
     );
   }

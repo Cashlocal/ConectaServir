@@ -240,8 +240,7 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, en
     });
   }
 
-  drawSignature(leftCx,  "PRESIDENTE",                   "2025-26");
-  drawSignature(rightCx, "COMISSÃO DO LEILÃO DE ARTES",  "2025-26");
+  drawSignature(width / 2, "PRESIDENTE", "2025-26");
 
   const pdfBytes = await pdfDoc.save();
   return Buffer.from(pdfBytes);
