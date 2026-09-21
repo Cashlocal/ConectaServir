@@ -37,6 +37,10 @@ export default function CertificadosPage() {
   const [emitindo,     setEmitindo]     = useState<string | null>(null);
   const [emitidoOk,    setEmitidoOk]    = useState<string | null>(null);
 
+  // Modal de horas
+  const [modalHoras,   setModalHoras]   = useState<Certificado | null>(null);
+  const [horasInput,   setHorasInput]   = useState("");
+
   // ── Hooks (devem vir ANTES de qualquer return condicional) ─────────────────
   useEffect(() => {
     try {
@@ -80,7 +84,49 @@ export default function CertificadosPage() {
     setTimeout(() => setToast(null), 5000);
   }
 
+  function abrirModalHoras(cert: Certificado) {
+    setHorasInput(cert.qtdeHoras > 0 ? String(cert.qtdeHoras) : "");
+    setModalHoras(cert);
+  }
+
+  async function confirmarEmissao() {
+    if (!modalHoras) return;
+    const horas = Number(horasInput);
+    if (!horasInput || isNaN(horas) || horas < 0) {
+      showToast("Informe uma quantidade de horas válida.", "erro");
+      return;
+    }
+    const certId = modalHoras.id;
+    setModalHoras(null);
+    setEmitindo(certId);
+    try {
+      const res  = await fetch(`/api/certificados/${certId}/enviar-email`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ qtdeHoras: horas }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showToast(data.error ?? "Erro ao emitir certificado.", "erro");
+      } else {
+        setCertificados((prev) =>
+          prev.map((c) => c.id === certId
+            ? { ...c, status: "Emitido", qtdeHoras: horas, arquivoUrl: data.arquivoUrl ?? c.arquivoUrl }
+            : c)
+        );
+        setEmitidoOk(certId);
+        showToast("Certificado emitido e email enviado com sucesso!", "ok");
+        setTimeout(() => setEmitidoOk(null), 4000);
+      }
+    } catch {
+      showToast("Erro inesperado. Tente novamente.", "erro");
+    } finally {
+      setEmitindo(null);
+    }
+  }
+
   async function emitirCertificado(certId: string) {
+    // Mantido para backward compat (certificados antigos sem modal)
     setEmitindo(certId);
     try {
       const res  = await fetch(`/api/certificados/${certId}/enviar-email`, { method: "POST" });
@@ -89,7 +135,9 @@ export default function CertificadosPage() {
         showToast(data.error ?? "Erro ao emitir certificado.", "erro");
       } else {
         setCertificados((prev) =>
-          prev.map((c) => c.id === certId ? { ...c, status: "Emitido" } : c)
+          prev.map((c) => c.id === certId
+            ? { ...c, status: "Emitido", arquivoUrl: data.arquivoUrl ?? c.arquivoUrl }
+            : c)
         );
         setEmitidoOk(certId);
         showToast("Certificado emitido e email enviado com sucesso!", "ok");
@@ -220,18 +268,19 @@ export default function CertificadosPage() {
 
                 {/* Ações */}
                 <div className="shrink-0">
+                  {/* Pendente SEM arquivo: só botão Emitir */}
                   {isPendente && !temArquivo && (
-                    <Link href={`/certificados/${cert.id}/gerar`}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-3.5 py-2 text-[13px] font-semibold text-[#1d4ed8] transition-colors hover:bg-[#dbeafe] [border-width:0.5px]">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                        <line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" />
-                      </svg>
-                      Gerar certificado
-                    </Link>
+                    <button type="button" onClick={() => abrirModalHoras(cert)}
+                      disabled={emitindo === cert.id}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#e9d5ff] bg-[#faf5ff] px-3.5 py-2 text-[13px] font-semibold text-[#7c3aed] transition-colors hover:bg-[#ede9fe] [border-width:0.5px] disabled:opacity-60">
+                      {emitindo === cert.id
+                        ? <><svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>Emitindo...</>
+                        : <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>Emitir certificado</>
+                      }
+                    </button>
                   )}
 
+                  {/* Pendente COM arquivo OU Emitido COM arquivo */}
                   {(isPendente || isEmitido) && temArquivo && (
                     <div className="flex flex-wrap items-center gap-2">
                       <a href={cert.arquivoUrl as string} target="_blank" rel="noopener noreferrer"
@@ -253,7 +302,7 @@ export default function CertificadosPage() {
                       </a>
 
                       {isPendente && (
-                        <button type="button" onClick={() => emitirCertificado(cert.id)}
+                        <button type="button" onClick={() => abrirModalHoras(cert)}
                           disabled={emitindo === cert.id}
                           title={cert.voluntarioEmail ? `Enviar para ${cert.voluntarioEmail}` : "Email do voluntário não cadastrado"}
                           className={`inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-[13px] font-semibold transition-colors [border-width:0.5px] disabled:cursor-not-allowed disabled:opacity-60
@@ -281,6 +330,50 @@ export default function CertificadosPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Modal de horas */}
+      {modalHoras && (
+        <div className="fixed inset-0 z-[400] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <button type="button" className="absolute inset-0 bg-black/40" onClick={() => setModalHoras(null)} aria-label="Fechar" />
+          <div className="relative w-full max-w-sm rounded-2xl bg-white p-8 shadow-[0_8px_40px_rgba(29,78,216,0.18)]">
+            <h3 className="mb-1 text-[18px] font-bold text-[#1e3a8a]"
+              style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}>
+              Emitir certificado
+            </h3>
+            <p className="mb-5 text-[13px] text-[#64748b]">
+              <span className="font-medium text-[#1e3a8a]">{modalHoras.voluntario}</span>
+              {" — "}{modalHoras.atividade}
+            </p>
+
+            <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">
+              Quantidade de horas <span className="text-[#dc2626]">*</span>
+            </label>
+            <input
+              type="number" min="0" step="0.5"
+              value={horasInput}
+              onChange={(e) => setHorasInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && confirmarEmissao()}
+              placeholder="Ex: 4"
+              autoFocus
+              className="w-full rounded-xl border border-[#bfdbfe] bg-[#f8faff] px-4 py-3 text-[15px] text-[#0f172a] placeholder-[#94a3b8] outline-none [border-width:0.5px] focus:border-[#1a44a6] focus:bg-white focus:ring-2 focus:ring-[#1a44a6]/15"
+            />
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button type="button" onClick={() => setModalHoras(null)}
+                className="rounded-xl border border-[#e2e8f0] px-5 py-2.5 text-[14px] font-medium text-[#475569] hover:bg-[#f8faff] [border-width:0.5px]">
+                Cancelar
+              </button>
+              <button type="button" onClick={confirmarEmissao}
+                className="inline-flex items-center gap-2 rounded-xl bg-[#7c3aed] px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#6d28d9]">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                Confirmar e enviar
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

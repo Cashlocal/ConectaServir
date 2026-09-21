@@ -35,7 +35,23 @@ export async function POST(req, { params }) {
     );
     if (!rec) return NextResponse.json({ error: "Certificado não encontrado." }, { status: 404 });
 
-    const qtdeHoras = rec.fields["Qtde Horas"] ?? 0;
+    // Aceita qtdeHoras via body para salvar antes de gerar o PDF
+    let qtdeHoras = rec.fields["Qtde Horas"] ?? 0;
+    let horasBody = null;
+    try { const b = await req.json(); horasBody = b?.qtdeHoras; } catch {}
+    if (horasBody !== null && horasBody !== undefined) {
+      qtdeHoras = Number(horasBody) || 0;
+      // Salva as horas no Airtable antes de tudo
+      await fetch(
+        `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}/${recordId}`,
+        {
+          method:  "PATCH",
+          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+          body:    JSON.stringify({ fields: { "Qtde Horas": qtdeHoras } }),
+        }
+      ).catch(() => {});
+    }
+
     const atividade = rec.fields["Atividade"]  ?? "";
     const dataEmissao = new Date().toLocaleDateString("pt-BR", {
       day: "2-digit", month: "long", year: "numeric",
@@ -106,17 +122,26 @@ export async function POST(req, { params }) {
       );
     }
 
-    // Atualiza status para "Emitido" no Airtable
+    // Atualiza status para "Emitido" e salva URL do PDF no Airtable
+    const host   = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
+    const proto  = req.headers.get("x-forwarded-proto") ?? "https";
+    const pdfUrl = `${proto}://${host}/api/certificados/${recordId}/pdf`;
+
     await fetch(
       `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}/${recordId}`,
       {
         method:  "PATCH",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body:    JSON.stringify({ fields: { Status: "Emitido" } }),
+        body:    JSON.stringify({
+          fields: {
+            Status: "Emitido",
+            "Certificado gerado": [{ url: pdfUrl, filename: `certificado-${recordId}.pdf` }],
+          },
+        }),
       }
     ).catch(() => {});
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, arquivoUrl: pdfUrl });
   } catch (err) {
     console.error("Erro ao enviar email:", err);
     return NextResponse.json({ error: "Erro inesperado ao enviar o email." }, { status: 500 });

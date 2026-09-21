@@ -71,25 +71,8 @@ export async function POST(req, { params }) {
         );
 
         if (certRes.ok) {
-          const certData = await certRes.json();
-          const certId   = certData.id;
-
-          // Salva URL do PDF no certificado (gerado dinamicamente pelo endpoint /pdf)
-          const host     = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
-          const proto    = req.headers.get("x-forwarded-proto") ?? "https";
-          const pdfUrl   = `${proto}://${host}/api/certificados/${certId}/pdf`;
-          const filename = `certificado-${certId}.pdf`;
-
-          await fetch(
-            `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tabCert)}/${certId}`,
-            {
-              method:  "PATCH",
-              headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-              body:    JSON.stringify({
-                fields: { "Certificado gerado": [{ url: pdfUrl, filename }] },
-              }),
-            }
-          );
+          // Apenas registra o certificado pendente — o PDF será gerado ao emitir
+          // (quando as horas forem informadas)
         }
       } catch {
         // Falha silenciosa: o vínculo com o projeto já foi salvo
