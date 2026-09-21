@@ -26,24 +26,18 @@ const STATUS_OPTS = ["Todos", "Pendente", "Emitido", "Aprovado", "Rejeitado"];
 
 export default function CertificadosPage() {
   const router = useRouter();
+
+  // ── State ──────────────────────────────────────────────────────────────────
   const [pronto,       setPronto]       = useState(false);
   const [certificados, setCertificados] = useState<Certificado[]>([]);
   const [carregando,   setCarregando]   = useState(true);
-  const [toast, setToast] = useState<{ msg: string; tipo: "ok" | "erro" } | null>(null);
+  const [toast,        setToast]        = useState<{ msg: string; tipo: "ok" | "erro" } | null>(null);
+  const [busca,        setBusca]        = useState("");
+  const [filtroStatus, setFiltroStatus] = useState("Todos");
+  const [emitindo,     setEmitindo]     = useState<string | null>(null);
+  const [emitidoOk,    setEmitidoOk]    = useState<string | null>(null);
 
-  // Filtros
-  const [busca,         setBusca]         = useState("");
-  const [filtroStatus,  setFiltroStatus]  = useState("Todos");
-
-  // Estado do botão Emitir
-  const [emitindo,   setEmitindo]   = useState<string | null>(null);
-  const [emitidoOk,  setEmitidoOk]  = useState<string | null>(null);
-
-  function showToast(msg: string, tipo: "ok" | "erro") {
-    setToast({ msg, tipo });
-    setTimeout(() => setToast(null), 5000);
-  }
-
+  // ── Hooks (devem vir ANTES de qualquer return condicional) ─────────────────
   useEffect(() => {
     try {
       const raw = localStorage.getItem("usuario");
@@ -64,7 +58,27 @@ export default function CertificadosPage() {
     })();
   }, [pronto]);
 
+  const filtrados = useMemo(() => {
+    const q = busca.toLowerCase();
+    return certificados.filter((c) => {
+      const matchTexto = !q || (
+        (c.voluntario ?? "").toLowerCase().includes(q) ||
+        (c.atividade  ?? "").toLowerCase().includes(q) ||
+        (c.entidade   ?? "").toLowerCase().includes(q)
+      );
+      const matchStatus = filtroStatus === "Todos" || c.status === filtroStatus;
+      return matchTexto && matchStatus;
+    });
+  }, [certificados, busca, filtroStatus]);
+
+  // ── Guard ──────────────────────────────────────────────────────────────────
   if (!pronto) return null;
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
+  function showToast(msg: string, tipo: "ok" | "erro") {
+    setToast({ msg, tipo });
+    setTimeout(() => setToast(null), 5000);
+  }
 
   async function emitirCertificado(certId: string) {
     setEmitindo(certId);
@@ -74,7 +88,6 @@ export default function CertificadosPage() {
       if (!res.ok) {
         showToast(data.error ?? "Erro ao emitir certificado.", "erro");
       } else {
-        // Atualiza status localmente
         setCertificados((prev) =>
           prev.map((c) => c.id === certId ? { ...c, status: "Emitido" } : c)
         );
@@ -89,19 +102,7 @@ export default function CertificadosPage() {
     }
   }
 
-  const filtrados = useMemo(() => {
-    const q = busca.toLowerCase();
-    return certificados.filter((c) => {
-      const matchTexto = !q || (
-        c.voluntario.toLowerCase().includes(q) ||
-        c.atividade.toLowerCase().includes(q) ||
-        c.entidade.toLowerCase().includes(q)
-      );
-      const matchStatus = filtroStatus === "Todos" || c.status === filtroStatus;
-      return matchTexto && matchStatus;
-    });
-  }, [certificados, busca, filtroStatus]);
-
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <main className="min-h-[calc(100vh-120px)] bg-[#eff6ff] px-6 py-12 md:px-16 md:py-[48px]">
       {/* Cabeçalho */}
@@ -124,7 +125,6 @@ export default function CertificadosPage() {
 
       {/* Filtros */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-        {/* Busca texto */}
         <div className="relative flex-1">
           <svg className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#94a3b8]"
             width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -142,8 +142,6 @@ export default function CertificadosPage() {
             </button>
           )}
         </div>
-
-        {/* Filtro status */}
         <div className="flex flex-wrap gap-2">
           {STATUS_OPTS.map((s) => (
             <button key={s} type="button" onClick={() => setFiltroStatus(s)}
@@ -158,7 +156,7 @@ export default function CertificadosPage() {
         </div>
       </div>
 
-      {/* Conteúdo */}
+      {/* Lista */}
       {carregando ? (
         <div className="space-y-3">
           {[0,1,2].map((k) => (
@@ -176,7 +174,9 @@ export default function CertificadosPage() {
             </svg>
           </div>
           <p className="text-[16px] font-medium text-[#475569]">
-            {busca || filtroStatus !== "Todos" ? "Nenhum certificado encontrado com esses filtros." : "Nenhum certificado registrado ainda."}
+            {busca || filtroStatus !== "Todos"
+              ? "Nenhum certificado encontrado com esses filtros."
+              : "Nenhum certificado registrado ainda."}
           </p>
           {!busca && filtroStatus === "Todos" && (
             <Link href="/certificados/novo" className="mt-4 text-[14px] font-semibold text-[#1d4ed8] hover:underline">
@@ -187,10 +187,10 @@ export default function CertificadosPage() {
       ) : (
         <div className="space-y-3">
           {filtrados.map((cert) => {
-            const statusClass  = STATUS_STYLE[cert.status] ?? "bg-[#f1f5f9] text-[#475569]";
-            const isPendente   = cert.status === "Pendente";
-            const isEmitido    = cert.status === "Emitido" || cert.status === "Aprovado";
-            const temArquivo   = !!cert.arquivoUrl;
+            const statusClass = STATUS_STYLE[cert.status] ?? "bg-[#f1f5f9] text-[#475569]";
+            const isPendente  = cert.status === "Pendente";
+            const isEmitido   = cert.status === "Emitido" || cert.status === "Aprovado";
+            const temArquivo  = !!cert.arquivoUrl;
 
             return (
               <div key={cert.id}
@@ -234,8 +234,7 @@ export default function CertificadosPage() {
 
                   {(isPendente || isEmitido) && temArquivo && (
                     <div className="flex flex-wrap items-center gap-2">
-                      {/* Visualizar */}
-                      <a href={cert.arquivoUrl!} target="_blank" rel="noopener noreferrer"
+                      <a href={cert.arquivoUrl as string} target="_blank" rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 rounded-lg border border-[#bbf7d0] bg-[#f0fdf4] px-3.5 py-2 text-[13px] font-semibold text-[#16a34a] transition-colors hover:bg-[#dcfce7] [border-width:0.5px]">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
@@ -243,8 +242,7 @@ export default function CertificadosPage() {
                         Visualizar
                       </a>
 
-                      {/* Download */}
-                      <a href={`/api/certificados/download?url=${encodeURIComponent(cert.arquivoUrl!)}&filename=${encodeURIComponent(`certificado-${cert.voluntario.replace(/\s+/g, "-").toLowerCase()}.pdf`)}`}
+                      <a href={`/api/certificados/download?url=${encodeURIComponent(cert.arquivoUrl as string)}&filename=${encodeURIComponent(`certificado-${cert.voluntario.replace(/\s+/g, "-").toLowerCase()}.pdf`)}`}
                         download
                         className="inline-flex items-center gap-1.5 rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-3.5 py-2 text-[13px] font-semibold text-[#1d4ed8] transition-colors hover:bg-[#dbeafe] [border-width:0.5px]">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -254,7 +252,6 @@ export default function CertificadosPage() {
                         Download
                       </a>
 
-                      {/* Emitir certificado (só quando Pendente) */}
                       {isPendente && (
                         <button type="button" onClick={() => emitirCertificado(cert.id)}
                           disabled={emitindo === cert.id}
@@ -273,7 +270,7 @@ export default function CertificadosPage() {
                             <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>Emitido!</>
                           ) : (
                             <><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                              <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                              <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                             </svg>Emitir certificado</>
                           )}
                         </button>
@@ -290,11 +287,10 @@ export default function CertificadosPage() {
       {/* Toast */}
       {toast && (
         <div className={`fixed bottom-6 left-1/2 z-[500] flex -translate-x-1/2 items-center gap-3 rounded-2xl px-5 py-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.18)] ${toast.tipo === "ok" ? "bg-[#16a34a] text-white" : "bg-[#dc2626] text-white"}`}>
-          {toast.tipo === "ok" ? (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
-          ) : (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
-          )}
+          {toast.tipo === "ok"
+            ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
+            : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+          }
           <span className="text-[14px] font-semibold">{toast.msg}</span>
           <button type="button" onClick={() => setToast(null)} className="ml-1 opacity-80 hover:opacity-100" aria-label="Fechar">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
