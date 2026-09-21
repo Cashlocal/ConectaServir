@@ -92,7 +92,7 @@ export async function POST(req, { params }) {
     });
     const pdfBase64 = Buffer.from(pdfBuffer).toString("base64");
 
-    // URL permanente do PDF (para referência no webhook)
+    // URL permanente do PDF
     const host   = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
     const proto  = req.headers.get("x-forwarded-proto") ?? "https";
     const pdfUrl = `${proto}://${host}/api/certificados/${recordId}/pdf`;
@@ -123,10 +123,6 @@ export async function POST(req, { params }) {
     }
 
     // Atualiza status para "Emitido" e salva URL do PDF no Airtable
-    const host   = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
-    const proto  = req.headers.get("x-forwarded-proto") ?? "https";
-    const pdfUrl = `${proto}://${host}/api/certificados/${recordId}/pdf`;
-
     await fetch(
       `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}/${recordId}`,
       {
