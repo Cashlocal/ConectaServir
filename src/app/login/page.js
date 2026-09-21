@@ -28,7 +28,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!data.ok) {
-        setErro("Usuário e senha inválidos.");
+        setErro(data.message || "Usuário e senha inválidos.");
         return;
       }
 
@@ -77,21 +77,20 @@ export default function LoginPage() {
         {/* Card de sucesso */}
         {usuarioLocalizado ? (
           <div className="rounded-2xl border border-[#bbf7d0] bg-white p-8 text-center shadow-[0_4px_24px_rgba(22,163,74,0.08)] [border-width:0.5px]">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#dcfce7]">
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#16a34a"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M20 6L9 17l-5-5" />
-              </svg>
-            </div>
+            {usuarioLocalizado.foto ? (
+              <div className="mx-auto mb-4 h-16 w-16 overflow-hidden rounded-full ring-4 ring-[#bbf7d0]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={usuarioLocalizado.foto} alt={usuarioLocalizado.nome}
+                  className="h-full w-full object-cover" />
+              </div>
+            ) : (
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#dcfce7]">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"
+                  strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+              </div>
+            )}
             <h2
               className="text-2xl font-bold text-[#15803d]"
               style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}

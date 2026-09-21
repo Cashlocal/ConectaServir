@@ -63,6 +63,15 @@ export async function POST(req) {
       );
     }
 
+    // Verifica se o usuário está ativo
+    const statusUsuario = String(record.fields["Status"] ?? "").trim();
+    if (statusUsuario === "Inativo") {
+      return NextResponse.json(
+        { ok: false, message: "Sua conta está inativa. Entre em contato com o administrador." },
+        { status: 403 }
+      );
+    }
+
     const fotoArr = record.fields["foto"];
     const foto = Array.isArray(fotoArr) ? fotoArr[0]?.url ?? null : null;
 

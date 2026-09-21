@@ -19,7 +19,7 @@ const links = [
   { href: "/consultar-demandas", label: "Demandas" },
 ];
 
-type Usuario = { id: string; nome: string; email: string };
+type Usuario = { id: string; nome: string; email: string; foto?: string | null };
 
 export function Navbar() {
   const router = useRouter();
@@ -142,11 +142,15 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => setDropdownOpen((v) => !v)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1d4ed8] text-[15px] font-bold text-white shadow-sm transition-opacity hover:opacity-90"
+                  className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#1d4ed8] text-[15px] font-bold text-white shadow-sm transition-opacity hover:opacity-90"
                   aria-label="Menu do usuário"
                   aria-expanded={dropdownOpen}
                 >
-                  {inicial}
+                  {usuario.foto ? (
+                    <Image src={usuario.foto} alt={usuario.nome} width={40} height={40} className="h-10 w-10 object-cover" unoptimized />
+                  ) : (
+                    inicial
+                  )}
                 </button>
 
                 {dropdownOpen && (
@@ -232,6 +236,16 @@ export function Navbar() {
                       className="block px-4 py-2.5 text-[14px] text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
                     >
                       Perfil
+                    </Link>
+
+                    <div style={{ borderTop: "0.5px solid #e2e8f0" }} />
+
+                    <Link
+                      href="/usuarios-admin"
+                      onClick={() => setDropdownOpen(false)}
+                      className="block px-4 py-2.5 text-[14px] text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
+                    >
+                      Usuários
                     </Link>
 
                     <div style={{ borderTop: "0.5px solid #e2e8f0" }} />
@@ -386,6 +400,13 @@ export function Navbar() {
                     onClick={() => setOpen(false)}
                   >
                     Perfil
+                  </Link>
+                  <Link
+                    href="/usuarios-admin"
+                    className="rounded-lg px-4 py-3 text-[15px] font-medium text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
+                    onClick={() => setOpen(false)}
+                  >
+                    Usuários
                   </Link>
                   <button
                     type="button"
