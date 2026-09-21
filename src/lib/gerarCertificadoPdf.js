@@ -59,6 +59,14 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, en
     scriptFont = await pdfDoc.embedFont(fontBytes);
   } catch {}
 
+  // Fonte para a assinatura do presidente
+  let sigFont = timesBI;
+  try {
+    const fontPath = path.join(process.cwd(), "public", "fonts", "GreatVibes-Regular.ttf");
+    const fontBytes = fs.readFileSync(fontPath);
+    sigFont = await pdfDoc.embedFont(fontBytes);
+  } catch {}
+
   // ── FUNDO AZUL ────────────────────────────────────────────────────────────
   page.drawRectangle({ x: 0, y: 0, width, height, color: AZUL_FUNDO });
 
@@ -217,10 +225,20 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, en
   // ── ASSINATURAS ────────────────────────────────────────────────────────────
   const sigLineW = 145;
   const sigY     = B1 + 55;
-  const leftCx   = width * 0.27;
-  const rightCx  = width * 0.73;
 
   function drawSignature(centerX, label, year) {
+    // Nome em cursiva acima da linha
+    const sigName     = "Simone Castro";
+    const sigNameSize = 18;
+    const sigNameW    = sigFont.widthOfTextAtSize(sigName, sigNameSize);
+    page.drawText(sigName, {
+      x:    centerX - sigNameW / 2,
+      y:    sigY + 18,
+      size: sigNameSize,
+      font: sigFont,
+      color: AZUL_TITULO,
+    });
+
     // Traço dourado
     page.drawLine({
       start: { x: centerX - sigLineW / 2, y: sigY },
@@ -240,7 +258,7 @@ export async function gerarCertificadoPdf({ voluntario, qtdeHoras, atividade, en
     });
   }
 
-  drawSignature(width / 2, "PRESIDENTE", "2025-26");
+  drawSignature(width / 2, "PRESIDENTE", "2026-27");
 
   const pdfBytes = await pdfDoc.save();
   return Buffer.from(pdfBytes);
