@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server";
 
-const TABLE   = process.env.AIRTABLE_TABLE_ENTIDADES ?? "tblPIOP4H76gOOPSe";
-const WEBHOOK = "https://integrador.cashlocal.com.br/webhook/d1be98bc-923e-4dcf-ae5a-974ef17932e9";
+const TABLE         = process.env.AIRTABLE_TABLE_ENTIDADES ?? "tblPIOP4H76gOOPSe";
+const WEBHOOK       = "https://integrador.cashlocal.com.br/webhook/d1be98bc-923e-4dcf-ae5a-974ef17932e9";
+const LINK_ACESSO   = "https://www.conectaservir.com.br/login";
+
+function gerarSenha(cnpj) {
+  // Remove tudo que não é dígito e pega os 6 primeiros
+  const digits = String(cnpj ?? "").replace(/\D/g, "");
+  return digits.slice(0, 6) || "123456";
+}
 
 export async function POST(_req, { params }) {
   const { id } = await params;
   const apiKey = process.env.AIRTABLE_API_KEY;
   const baseId = process.env.AIRTABLE_BASE_ID;
+  const tableUsuarios = process.env.AIRTABLE_TABLE_USUARIOS;
 
   if (!apiKey || !baseId) {
     return NextResponse.json({ error: "Configuração do servidor incompleta." }, { status: 503 });
@@ -36,7 +44,43 @@ export async function POST(_req, { params }) {
       emailPessoaResp:    fields["Email Pessoa Responsavel"]    ?? "",
     };
 
-    // 2. Atualizar status para Aprovada no Airtable
+    const senha = gerarSenha(entidade.cnpj);
+    const emailUsuario = entidade.emailPessoaResp || entidade.emailEntidade;
+
+    // 2. Criar usuário do tipo entidade no Airtable (tabela Usuários)
+    let usuarioCriado = null;
+    if (tableUsuarios && emailUsuario) {
+      try {
+        const userRes = await fetch(
+          `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableUsuarios)}`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              fields: {
+                nome:   entidade.nomePessoaResp || entidade.nome,
+                email:  emailUsuario,
+                Senha:  senha,
+                Clube:  entidade.nome,
+                Tipo:   "Entidade",
+                Status: "Ativo",
+              },
+            }),
+          }
+        );
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          usuarioCriado = { id: userData.id, email: emailUsuario };
+        } else {
+          const errData = await userRes.json().catch(() => ({}));
+          console.error("Erro ao criar usuário entidade:", errData);
+        }
+      } catch (userErr) {
+        console.error("Erro ao criar usuário entidade:", userErr);
+      }
+    }
+
+    // 3. Atualizar status para Aprovada no Airtable
     const patchRes = await fetch(
       `https://api.airtable.com/v0/${baseId}/${TABLE}/${id}`,
       {
@@ -53,15 +97,21 @@ export async function POST(_req, { params }) {
       );
     }
 
-    // 3. Disparar webhook para envio de e-mails
+    // 4. Disparar webhook com todos os dados para envio de e-mails
     try {
       await fetch(WEBHOOK, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entidade, status: "Aprovada" }),
+        body: JSON.stringify({
+          entidade,
+          status:      "Aprovada",
+          linkAcesso:  LINK_ACESSO,
+          emailUsuario,
+          senhaUsuario: senha,
+          usuarioCriado,
+        }),
       });
     } catch (webhookErr) {
-      // Webhook falhou, mas a aprovação já foi salva — não bloquear a resposta
       console.error("Webhook error:", webhookErr);
     }
 

@@ -167,7 +167,7 @@ export default function CadastrarEntidadePage() {
                   Nome da Entidade <span className="text-[#dc2626]">*</span>
                 </label>
                 <input type="text" value={nome} onChange={(e) => setNome(e.target.value)}
-                  placeholder="Ex: GAMA — Casa de Apoio" className={inputClass} required />
+                  placeholder="Informe o nome da sua entidade" className={inputClass} required />
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Descrição</label>
