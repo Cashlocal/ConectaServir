@@ -49,6 +49,7 @@ export default function EntidadesPage() {
   const [salvando, setSalvando]     = useState(false);
   const [erro, setErro]             = useState("");
   const [aprovando, setAprovando]   = useState<string | null>(null);
+  const [expandida, setExpandida]   = useState<string | null>(null);
 
   const [nome, setNome]                             = useState("");
   const [descricao, setDescricao]                   = useState("");
@@ -297,60 +298,157 @@ export default function EntidadesPage() {
               </thead>
               <tbody className="divide-y divide-[#f1f5f9]">
                 {filtradas.map((ent) => (
-                  <tr key={ent.id} className="transition-colors hover:bg-[#f8faff]">
-                    <td className="px-6 py-4">
-                      <p className="font-medium text-[#1e3a8a]">{ent.nome}</p>
-                      {ent.cnpj && <p className="text-[12px] text-[#94a3b8]">CNPJ: {ent.cnpj}</p>}
-                    </td>
-                    <td className="hidden px-6 py-4 text-[#475569] lg:table-cell">
-                      {ent.nomePessoaResp || <span className="text-[#cbd5e1]">—</span>}
-                    </td>
-                    <td className="hidden px-6 py-4 text-[#475569] md:table-cell">
-                      {ent.emailEntidade || <span className="text-[#cbd5e1]">—</span>}
-                    </td>
-                    <td className="px-6 py-4">
-                      <StatusBadge status={ent.status} />
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="inline-flex items-center gap-1.5">
-                        {ent.status === "Pendente" && (
-                          <button type="button"
-                            onClick={() => aprovar(ent)}
-                            disabled={aprovando === ent.id}
-                            className="inline-flex items-center gap-1 rounded-lg bg-[#dcfce7] px-2.5 py-1 text-[12px] font-semibold text-[#15803d] transition-colors hover:bg-[#bbf7d0] disabled:opacity-60"
-                            title="Aprovar entidade">
-                            {aprovando === ent.id ? (
-                              <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                              </svg>
-                            ) : (
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                <path d="M20 6L9 17l-5-5" />
-                              </svg>
-                            )}
-                            Aprovar
+                  <>
+                    {/* ── Linha principal ── */}
+                    <tr key={ent.id} className="transition-colors hover:bg-[#f8faff]">
+                      {/* Nome + logo + expandir */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          {/* Logo ou inicial */}
+                          {ent.logo ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={ent.logo} alt={ent.nome}
+                              className="h-10 w-10 shrink-0 rounded-lg object-contain ring-1 ring-[#bfdbfe]" />
+                          ) : (
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#dbeafe] text-[16px] font-bold text-[#1d4ed8]">
+                              {ent.nome.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-medium text-[#1e3a8a]">{ent.nome}</p>
+                            {ent.cnpj && <p className="text-[12px] text-[#94a3b8]">CNPJ: {ent.cnpj}</p>}
+                          </div>
+                          {/* Botão expandir */}
+                          <button
+                            type="button"
+                            onClick={() => setExpandida((prev) => prev === ent.id ? null : ent.id)}
+                            className="ml-1 rounded-md p-1 text-[#94a3b8] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
+                            title={expandida === ent.id ? "Recolher" : "Expandir detalhes"}
+                          >
+                            <svg
+                              width="15" height="15" viewBox="0 0 24 24" fill="none"
+                              stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                              className={`transition-transform duration-200 ${expandida === ent.id ? "rotate-180" : ""}`}
+                              aria-hidden="true"
+                            >
+                              <polyline points="6 9 12 15 18 9" />
+                            </svg>
                           </button>
-                        )}
-                        <button type="button" onClick={() => abrirEditar(ent)}
-                          className="rounded-lg p-1.5 text-[#64748b] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
-                          aria-label={`Editar ${ent.nome}`} title="Editar">
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                          </svg>
-                        </button>
-                        <button type="button" onClick={() => abrirExcluir(ent)}
-                          className="rounded-lg p-1.5 text-[#64748b] transition-colors hover:bg-[#fef2f2] hover:text-[#dc2626]"
-                          aria-label={`Excluir ${ent.nome}`} title="Excluir">
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                            <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" />
-                            <path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" />
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                        </div>
+                      </td>
+
+                      <td className="hidden px-6 py-4 text-[#475569] lg:table-cell">
+                        {ent.nomePessoaResp || <span className="text-[#cbd5e1]">—</span>}
+                      </td>
+                      <td className="hidden px-6 py-4 text-[#475569] md:table-cell">
+                        {ent.emailEntidade || <span className="text-[#cbd5e1]">—</span>}
+                      </td>
+                      <td className="px-6 py-4">
+                        <StatusBadge status={ent.status} />
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="inline-flex items-center gap-1.5">
+                          {ent.status === "Pendente" && (
+                            <button type="button"
+                              onClick={() => aprovar(ent)}
+                              disabled={aprovando === ent.id}
+                              className="inline-flex items-center gap-1 rounded-lg bg-[#dcfce7] px-2.5 py-1 text-[12px] font-semibold text-[#15803d] transition-colors hover:bg-[#bbf7d0] disabled:opacity-60"
+                              title="Aprovar entidade">
+                              {aprovando === ent.id ? (
+                                <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                                </svg>
+                              ) : (
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                  <path d="M20 6L9 17l-5-5" />
+                                </svg>
+                              )}
+                              Aprovar
+                            </button>
+                          )}
+                          <button type="button" onClick={() => abrirEditar(ent)}
+                            className="rounded-lg p-1.5 text-[#64748b] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
+                            aria-label={`Editar ${ent.nome}`} title="Editar">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
+                          </button>
+                          <button type="button" onClick={() => abrirExcluir(ent)}
+                            className="rounded-lg p-1.5 text-[#64748b] transition-colors hover:bg-[#fef2f2] hover:text-[#dc2626]"
+                            aria-label={`Excluir ${ent.nome}`} title="Excluir">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                              <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" />
+                              <path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* ── Linha expandida com detalhes ── */}
+                    {expandida === ent.id && (
+                      <tr key={`${ent.id}-expand`} className="bg-[#f8faff]">
+                        <td colSpan={5} className="px-6 pb-5 pt-0">
+                          <div className="mt-3 grid grid-cols-1 gap-4 rounded-xl border border-[#bfdbfe] bg-white p-5 [border-width:0.5px] sm:grid-cols-2 lg:grid-cols-3">
+
+                            {/* Dados da entidade */}
+                            <div>
+                              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[#64748b]">Dados da Entidade</p>
+                              <dl className="space-y-1.5 text-[13px]">
+                                <div className="flex gap-1.5">
+                                  <dt className="shrink-0 text-[#94a3b8]">Descrição:</dt>
+                                  <dd className="text-[#0f172a]">{ent.descricao || <span className="text-[#cbd5e1]">—</span>}</dd>
+                                </div>
+                                <div className="flex gap-1.5">
+                                  <dt className="shrink-0 text-[#94a3b8]">CNPJ:</dt>
+                                  <dd className="text-[#0f172a]">{ent.cnpj || <span className="text-[#cbd5e1]">—</span>}</dd>
+                                </div>
+                                <div className="flex gap-1.5">
+                                  <dt className="shrink-0 text-[#94a3b8]">Telefone:</dt>
+                                  <dd className="text-[#0f172a]">{ent.telefoneEntidade || <span className="text-[#cbd5e1]">—</span>}</dd>
+                                </div>
+                                <div className="flex gap-1.5">
+                                  <dt className="shrink-0 text-[#94a3b8]">E-mail:</dt>
+                                  <dd className="text-[#0f172a]">{ent.emailEntidade || <span className="text-[#cbd5e1]">—</span>}</dd>
+                                </div>
+                              </dl>
+                            </div>
+
+                            {/* Pessoa responsável */}
+                            <div>
+                              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[#64748b]">Pessoa Responsável</p>
+                              <dl className="space-y-1.5 text-[13px]">
+                                <div className="flex gap-1.5">
+                                  <dt className="shrink-0 text-[#94a3b8]">Nome:</dt>
+                                  <dd className="text-[#0f172a]">{ent.nomePessoaResp || <span className="text-[#cbd5e1]">—</span>}</dd>
+                                </div>
+                                <div className="flex gap-1.5">
+                                  <dt className="shrink-0 text-[#94a3b8]">Telefone:</dt>
+                                  <dd className="text-[#0f172a]">{ent.telefonePessoaResp || <span className="text-[#cbd5e1]">—</span>}</dd>
+                                </div>
+                                <div className="flex gap-1.5">
+                                  <dt className="shrink-0 text-[#94a3b8]">E-mail:</dt>
+                                  <dd className="text-[#0f172a]">{ent.emailPessoaResp || <span className="text-[#cbd5e1]">—</span>}</dd>
+                                </div>
+                              </dl>
+                            </div>
+
+                            {/* Logo */}
+                            {ent.logo && (
+                              <div>
+                                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[#64748b]">Logotipo</p>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={ent.logo} alt={`Logo ${ent.nome}`}
+                                  className="h-16 w-auto max-w-[140px] rounded-lg object-contain" />
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))}
               </tbody>
             </table>
