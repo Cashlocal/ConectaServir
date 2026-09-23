@@ -9,15 +9,24 @@ export async function GET(req) {
 
   if (!apiKey || !baseId) return NextResponse.json([]);
 
-  // Filtro opcional por status via query string (?status=Em+Aberto)
+  // Filtros via query string
   const { searchParams } = new URL(req.url);
   const statusFiltro = searchParams.get("status");
+  const cnpjEntidade = searchParams.get("cnpjEntidade") ?? "";
 
   try {
     // Busca demandas e entidades em paralelo para resolver linked records
+    const demFilters = [];
+    if (statusFiltro) demFilters.push(`{Status}='${statusFiltro}'`);
+    if (cnpjEntidade) {
+      const digits = cnpjEntidade.replace(/\D/g, "");
+      demFilters.push(`FIND("${digits}",SUBSTITUTE(ARRAYJOIN({CNPJ Entidade},""),"-",""))>0`);
+    }
+    const demFilter = demFilters.length === 1 ? demFilters[0] : demFilters.length > 1 ? `AND(${demFilters.join(",")})` : "";
+
     let demUrl = `https://api.airtable.com/v0/${baseId}/${TABLE_DEMANDAS}?sort[0][field]=Name&sort[0][direction]=asc`;
-    if (statusFiltro) {
-      demUrl += `&filterByFormula=${encodeURIComponent(`{Status}='${statusFiltro}'`)}`;
+    if (demFilter) {
+      demUrl += `&filterByFormula=${encodeURIComponent(demFilter)}`;
     }
 
     const entParams = new URLSearchParams();

@@ -3,13 +3,15 @@ import { NextResponse } from "next/server";
 function mapUser(r) {
   const fotoArr = r.fields["foto"];
   return {
-    id:     r.id,
-    nome:   r.fields["nome"]   ?? "",
-    email:  r.fields["email"]  ?? "",
-    senha:  r.fields["Senha"]  ?? "",
-    clube:  r.fields["Clube"]  ?? "",
-    status: r.fields["Status"] ?? "Ativo",
-    foto:   Array.isArray(fotoArr) ? (fotoArr[0]?.url ?? null) : null,
+    id:            r.id,
+    nome:          r.fields["nome"]          ?? "",
+    email:         r.fields["email"]         ?? "",
+    senha:         r.fields["Senha"]         ?? "",
+    clube:         r.fields["Clube"]         ?? "",
+    tipo:          r.fields["Tipo"]          ?? "",
+    cnpjEntidade:  r.fields["CNPJ Entidade"] ?? "",
+    status:        r.fields["Status"]        ?? "Ativo",
+    foto:          Array.isArray(fotoArr) ? (fotoArr[0]?.url ?? null) : null,
   };
 }
 
@@ -49,7 +51,7 @@ export async function POST(req) {
   }
 
   try {
-    const { nome, email, senha, clube, fotoUrl } = await req.json();
+    const { nome, email, senha, clube, tipo, cnpjEntidade, fotoUrl } = await req.json();
 
     if (!nome?.trim()) return NextResponse.json({ error: "Nome é obrigatório." }, { status: 400 });
     if (!email?.trim()) return NextResponse.json({ error: "Email é obrigatório." }, { status: 400 });
@@ -61,7 +63,9 @@ export async function POST(req) {
       Clube:   (clube ?? "").trim(),
       Status:  "Ativo",
     };
-    if (fotoUrl) fields["foto"] = [{ url: fotoUrl }];
+    if (tipo)         fields["Tipo"]          = tipo;
+    if (cnpjEntidade) fields["CNPJ Entidade"] = cnpjEntidade;
+    if (fotoUrl)      fields["foto"]          = [{ url: fotoUrl }];
 
     const res = await fetch(
       `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}`,

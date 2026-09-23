@@ -9,9 +9,13 @@ type Usuario = {
   email: string;
   senha: string;
   clube: string;
+  tipo: string;
+  cnpjEntidade: string;
   status: "Ativo" | "Inativo";
   foto: string | null;
 };
+
+const TIPOS_USUARIO = ["Administrador", "Entidade", "Voluntário"] as const;
 
 type ModalState =
   | { tipo: "editar"; usuario: Usuario }
@@ -29,10 +33,12 @@ export default function UsuariosAdminPage() {
   const [toggling, setToggling]     = useState<string | null>(null);
   const [erro, setErro]             = useState("");
 
-  const [nome, setNome]   = useState("");
-  const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
-  const [clube, setClube] = useState("");
+  const [nome, setNome]                   = useState("");
+  const [email, setEmail]                 = useState("");
+  const [senha, setSenha]                 = useState("");
+  const [clube, setClube]                 = useState("");
+  const [tipo, setTipo]                   = useState("");
+  const [cnpjEntidade, setCnpjEntidade]   = useState("");
   const [fotoFile, setFotoFile]       = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState("");
   const [fotoAtual, setFotoAtual]     = useState<string | null>(null);
@@ -63,7 +69,8 @@ export default function UsuariosAdminPage() {
 
   function abrirEditar(u: Usuario) {
     setNome(u.nome); setEmail(u.email); setSenha(u.senha);
-    setClube(u.clube); setFotoAtual(u.foto);
+    setClube(u.clube); setTipo(u.tipo ?? ""); setCnpjEntidade(u.cnpjEntidade ?? "");
+    setFotoAtual(u.foto);
     setFotoFile(null); setFotoPreview(""); setErro("");
     setModal({ tipo: "editar", usuario: u });
   }
@@ -102,7 +109,7 @@ export default function UsuariosAdminPage() {
       const isNovo = modal.usuario.id === "__novo__";
 
       if (isNovo) {
-        const body: Record<string, unknown> = { nome, email, senha, clube };
+        const body: Record<string, unknown> = { nome, email, senha, clube, tipo, cnpjEntidade };
         if (finalFotoUrl !== undefined) body.fotoUrl = finalFotoUrl;
 
         const res  = await fetch("/api/usuarios", {
@@ -118,7 +125,7 @@ export default function UsuariosAdminPage() {
         return;
       }
 
-      const body: Record<string, unknown> = { nome, email, senha, clube };
+      const body: Record<string, unknown> = { nome, email, senha, clube, tipo, cnpjEntidade };
       if (finalFotoUrl !== undefined) body.fotoUrl = finalFotoUrl;
 
       const res  = await fetch(`/api/usuarios/${modal.usuario.id}`, {
@@ -211,8 +218,9 @@ export default function UsuariosAdminPage() {
           type="button"
           onClick={() => {
             setNome(""); setEmail(""); setSenha(""); setClube("");
+            setTipo(""); setCnpjEntidade("");
             setFotoAtual(null); setFotoFile(null); setFotoPreview(""); setErro("");
-            setModal({ tipo: "editar", usuario: { id: "__novo__", nome: "", email: "", senha: "", clube: "", status: "Ativo", foto: null } });
+            setModal({ tipo: "editar", usuario: { id: "__novo__", nome: "", email: "", senha: "", clube: "", tipo: "", cnpjEntidade: "", status: "Ativo", foto: null } });
           }}
           className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[#1d4ed8] px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#1e40af]"
         >
@@ -266,6 +274,7 @@ export default function UsuariosAdminPage() {
                   <th className="px-6 py-3.5 text-left text-[12px] font-semibold uppercase tracking-wide text-[#64748b]">Usuário</th>
                   <th className="hidden px-6 py-3.5 text-left text-[12px] font-semibold uppercase tracking-wide text-[#64748b] md:table-cell">Email</th>
                   <th className="hidden px-6 py-3.5 text-left text-[12px] font-semibold uppercase tracking-wide text-[#64748b] lg:table-cell">Clube</th>
+                  <th className="hidden px-6 py-3.5 text-left text-[12px] font-semibold uppercase tracking-wide text-[#64748b] lg:table-cell">Tipo</th>
                   <th className="px-6 py-3.5 text-center text-[12px] font-semibold uppercase tracking-wide text-[#64748b]">Ativo</th>
                   <th className="w-24 px-6 py-3.5 text-right text-[12px] font-semibold uppercase tracking-wide text-[#64748b]">Ações</th>
                 </tr>
@@ -289,6 +298,16 @@ export default function UsuariosAdminPage() {
                     </td>
                     <td className="hidden px-6 py-3.5 text-[#475569] md:table-cell">{u.email || <span className="text-[#cbd5e1]">—</span>}</td>
                     <td className="hidden px-6 py-3.5 text-[#475569] lg:table-cell">{u.clube || <span className="text-[#cbd5e1]">—</span>}</td>
+                    <td className="hidden px-6 py-3.5 lg:table-cell">
+                      {u.tipo ? (
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold
+                          ${u.tipo === "Administrador" ? "bg-[#eff6ff] text-[#1d4ed8]"
+                          : u.tipo === "Entidade"      ? "bg-[#f0fdf4] text-[#15803d]"
+                          : "bg-[#fefce8] text-[#854d0e]"}`}>
+                          {u.tipo}
+                        </span>
+                      ) : <span className="text-[#cbd5e1]">—</span>}
+                    </td>
                     <td className="px-6 py-3.5 text-center">
                       <label className="inline-flex cursor-pointer items-center" title={u.status === "Ativo" ? "Clique para inativar" : "Clique para ativar"}>
                         <input type="checkbox" checked={u.status === "Ativo"} disabled={toggling === u.id}
@@ -385,6 +404,22 @@ export default function UsuariosAdminPage() {
                 <input type="text" value={clube} onChange={(e) => setClube(e.target.value)}
                   placeholder="Ex: Rotary Club de Pato Branco" className={inputClass} />
               </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Tipo</label>
+                <select value={tipo} onChange={(e) => setTipo(e.target.value)} className={inputClass}>
+                  <option value="">Selecione o tipo...</option>
+                  {TIPOS_USUARIO.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+              {tipo === "Entidade" && (
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">CNPJ da Entidade</label>
+                  <input type="text" value={cnpjEntidade} onChange={(e) => setCnpjEntidade(e.target.value)}
+                    placeholder="00.000.000/0000-00" className={inputClass} />
+                </div>
+              )}
 
               {erro && (
                 <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 [border-width:0.5px]">

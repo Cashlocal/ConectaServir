@@ -46,6 +46,9 @@ export default function ProjetosAdminPage() {
   const [salvando, setSalvando]   = useState(false);
   const [erro, setErro]           = useState("");
   const [form, setForm]           = useState({ ...emptyForm });
+  const [usuarioTipo, setUsuarioTipo]               = useState("");
+  const [usuarioCnpj, setUsuarioCnpj]               = useState("");
+  const [usuarioEntidadeId, setUsuarioEntidadeId]   = useState("");
 
   const nomeRef = useRef<HTMLInputElement>(null);
 
@@ -53,6 +56,10 @@ export default function ProjetosAdminPage() {
     try {
       const raw = localStorage.getItem("usuario");
       if (!raw) { router.replace("/login"); return; }
+      const u = JSON.parse(raw);
+      setUsuarioTipo(u.tipo ?? "");
+      setUsuarioCnpj(u.cnpjEntidade ?? "");
+      setUsuarioEntidadeId(u.entidadeId ?? "");
     } catch { router.replace("/login"); return; }
     setPronto(true);
   }, [router]);
@@ -60,6 +67,7 @@ export default function ProjetosAdminPage() {
   useEffect(() => {
     if (!pronto) return;
     Promise.all([carregarProjetos(), carregarEntidades()]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pronto]);
 
   useEffect(() => {
@@ -69,7 +77,16 @@ export default function ProjetosAdminPage() {
   async function carregarProjetos() {
     setCarregando(true);
     try {
-      const res  = await fetch("/api/projetos");
+      const cnpj = localStorage.getItem("usuario")
+        ? (JSON.parse(localStorage.getItem("usuario")!).cnpjEntidade ?? "")
+        : "";
+      const tipo = localStorage.getItem("usuario")
+        ? (JSON.parse(localStorage.getItem("usuario")!).tipo ?? "")
+        : "";
+      const url = tipo === "Entidade" && cnpj
+        ? `/api/projetos?cnpjEntidade=${encodeURIComponent(cnpj)}`
+        : "/api/projetos";
+      const res  = await fetch(url);
       const data = await res.json();
       setProjetos(Array.isArray(data) ? data : []);
     } catch { setProjetos([]); }
@@ -85,7 +102,8 @@ export default function ProjetosAdminPage() {
   }
 
   function abrirNovo() {
-    setForm({ ...emptyForm }); setErro("");
+    const entId = usuarioTipo === "Entidade" ? usuarioEntidadeId : "";
+    setForm({ ...emptyForm, entidadeId: entId }); setErro("");
     setModal({ tipo: "novo" });
   }
 

@@ -20,7 +20,15 @@ const links = [
   { href: "/entidades/cadastrar", label: "Entidades" },
 ];
 
-type Usuario = { id: string; nome: string; email: string; foto?: string | null };
+type Usuario = {
+  id: string;
+  nome: string;
+  email: string;
+  foto?: string | null;
+  tipo?: string;
+  cnpjEntidade?: string;
+  entidadeId?: string;
+};
 
 export function Navbar() {
   const router = useRouter();
@@ -76,6 +84,25 @@ export function Navbar() {
   }
 
   const inicial = usuario?.nome?.charAt(0).toUpperCase() ?? "?";
+  const isEntidade = usuario?.tipo === "Entidade";
+
+  // Menu do dropdown conforme tipo de usuário
+  const menuLogado = isEntidade
+    ? [
+        { href: "/projetos-admin",    label: "Projetos" },
+        { href: "/voluntarios-admin", label: "Voluntários" },
+        { href: "/demandas",          label: "Demandas" },
+        { href: "/certificados",      label: "Lançar Certificado" },
+      ]
+    : [
+        { href: "/certificados",      label: "Lançar Certificado" },
+        { href: "/entidades",         label: "Entidades" },
+        { href: "/projetos-admin",    label: "Projetos" },
+        { href: "/voluntarios-admin", label: "Voluntários" },
+        { href: "/demandas",          label: "Demandas" },
+        { href: "/eventos-admin",     label: "Eventos" },
+        { href: "/usuarios-admin",    label: "Usuários" },
+      ];
 
   return (
     <>
@@ -177,89 +204,27 @@ export function Navbar() {
                       <p className="truncate text-[12px] text-[#64748b]">
                         {usuario.email}
                       </p>
+                      {usuario.tipo && (
+                        <p className="mt-0.5 truncate text-[11px] text-[#94a3b8]">
+                          {usuario.tipo}
+                        </p>
+                      )}
                     </div>
 
                     <div style={{ borderTop: "0.5px solid #e2e8f0" }} />
 
-                    <Link
-                      href="/certificados"
-                      onClick={() => setDropdownOpen(false)}
-                      className="block px-4 py-2.5 text-[14px] text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
-                    >
-                      Lançar Certificado
-                    </Link>
-
-                    <div style={{ borderTop: "0.5px solid #e2e8f0" }} />
-
-                    <Link
-                      href="/entidades"
-                      onClick={() => setDropdownOpen(false)}
-                      className="block px-4 py-2.5 text-[14px] text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
-                    >
-                      Entidades
-                    </Link>
-
-                    <div style={{ borderTop: "0.5px solid #e2e8f0" }} />
-
-                    <Link
-                      href="/projetos-admin"
-                      onClick={() => setDropdownOpen(false)}
-                      className="block px-4 py-2.5 text-[14px] text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
-                    >
-                      Projetos
-                    </Link>
-
-                    <div style={{ borderTop: "0.5px solid #e2e8f0" }} />
-
-                    <Link
-                      href="/voluntarios-admin"
-                      onClick={() => setDropdownOpen(false)}
-                      className="block px-4 py-2.5 text-[14px] text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
-                    >
-                      Voluntários
-                    </Link>
-
-                    <div style={{ borderTop: "0.5px solid #e2e8f0" }} />
-
-                    <Link
-                      href="/entidades"
-                      onClick={() => setDropdownOpen(false)}
-                      className="block px-4 py-2.5 text-[14px] text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
-                    >
-                      Entidades
-                    </Link>
-
-                    <div style={{ borderTop: "0.5px solid #e2e8f0" }} />
-
-                    <Link
-                      href="/demandas"
-                      onClick={() => setDropdownOpen(false)}
-                      className="block px-4 py-2.5 text-[14px] text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
-                    >
-                      Demandas
-                    </Link>
-
-                    <div style={{ borderTop: "0.5px solid #e2e8f0" }} />
-
-                    <Link
-                      href="/eventos-admin"
-                      onClick={() => setDropdownOpen(false)}
-                      className="block px-4 py-2.5 text-[14px] text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
-                    >
-                      Eventos
-                    </Link>
-
-                    <div style={{ borderTop: "0.5px solid #e2e8f0" }} />
-
-                    <Link
-                      href="/usuarios-admin"
-                      onClick={() => setDropdownOpen(false)}
-                      className="block px-4 py-2.5 text-[14px] text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
-                    >
-                      Usuários
-                    </Link>
-
-                    <div style={{ borderTop: "0.5px solid #e2e8f0" }} />
+                    {menuLogado.map(({ href, label }) => (
+                      <div key={href}>
+                        <Link
+                          href={href}
+                          onClick={() => setDropdownOpen(false)}
+                          className="block px-4 py-2.5 text-[14px] text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
+                        >
+                          {label}
+                        </Link>
+                        <div style={{ borderTop: "0.5px solid #e2e8f0" }} />
+                      </div>
+                    ))}
 
                     <Link
                       href="/perfil"
@@ -372,63 +337,20 @@ export function Navbar() {
                       {usuario.nome}
                     </p>
                     <p className="text-[12px] text-[#64748b]">{usuario.email}</p>
+                    {usuario.tipo && (
+                      <p className="mt-0.5 text-[11px] text-[#94a3b8]">{usuario.tipo}</p>
+                    )}
                   </div>
-                  <Link
-                    href="/certificados"
-                    className="rounded-lg px-4 py-3 text-[15px] font-medium text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
-                    onClick={() => setOpen(false)}
-                  >
-                    Lançar Certificado
-                  </Link>
-                  <Link
-                    href="/entidades"
-                    className="rounded-lg px-4 py-3 text-[15px] font-medium text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
-                    onClick={() => setOpen(false)}
-                  >
-                    Entidades
-                  </Link>
-                  <Link
-                    href="/projetos-admin"
-                    className="rounded-lg px-4 py-3 text-[15px] font-medium text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
-                    onClick={() => setOpen(false)}
-                  >
-                    Projetos
-                  </Link>
-                  <Link
-                    href="/voluntarios-admin"
-                    className="rounded-lg px-4 py-3 text-[15px] font-medium text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
-                    onClick={() => setOpen(false)}
-                  >
-                    Voluntários
-                  </Link>
-                  <Link
-                    href="/entidades"
-                    className="rounded-lg px-4 py-3 text-[15px] font-medium text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
-                    onClick={() => setOpen(false)}
-                  >
-                    Entidades
-                  </Link>
-                  <Link
-                    href="/demandas"
-                    className="rounded-lg px-4 py-3 text-[15px] font-medium text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
-                    onClick={() => setOpen(false)}
-                  >
-                    Demandas
-                  </Link>
-                  <Link
-                    href="/eventos-admin"
-                    className="rounded-lg px-4 py-3 text-[15px] font-medium text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
-                    onClick={() => setOpen(false)}
-                  >
-                    Eventos
-                  </Link>
-                  <Link
-                    href="/usuarios-admin"
-                    className="rounded-lg px-4 py-3 text-[15px] font-medium text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
-                    onClick={() => setOpen(false)}
-                  >
-                    Usuários
-                  </Link>
+                  {menuLogado.map(({ href, label }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      className="rounded-lg px-4 py-3 text-[15px] font-medium text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
+                      onClick={() => setOpen(false)}
+                    >
+                      {label}
+                    </Link>
+                  ))}
                   <Link
                     href="/perfil"
                     className="rounded-lg px-4 py-3 text-[15px] font-medium text-[#0f172a] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"

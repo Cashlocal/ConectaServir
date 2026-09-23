@@ -43,10 +43,18 @@ export default function DemandasPage() {
 
   const nomeRef = useRef<HTMLInputElement>(null);
 
+  const [usuarioTipo, setUsuarioTipo]             = useState("");
+  const [usuarioCnpj, setUsuarioCnpj]             = useState("");
+  const [usuarioEntidadeId, setUsuarioEntidadeId] = useState("");
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem("usuario");
       if (!raw) { router.replace("/login"); return; }
+      const u = JSON.parse(raw);
+      setUsuarioTipo(u.tipo ?? "");
+      setUsuarioCnpj(u.cnpjEntidade ?? "");
+      setUsuarioEntidadeId(u.entidadeId ?? "");
     } catch {
       router.replace("/login"); return;
     }
@@ -58,6 +66,7 @@ export default function DemandasPage() {
       carregarDemandas();
       carregarEntidades();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pronto]);
 
   useEffect(() => {
@@ -67,7 +76,16 @@ export default function DemandasPage() {
   async function carregarDemandas() {
     setCarregando(true);
     try {
-      const res  = await fetch("/api/demandas");
+      const cnpj = localStorage.getItem("usuario")
+        ? (JSON.parse(localStorage.getItem("usuario")!).cnpjEntidade ?? "")
+        : "";
+      const tipo = localStorage.getItem("usuario")
+        ? (JSON.parse(localStorage.getItem("usuario")!).tipo ?? "")
+        : "";
+      const url = tipo === "Entidade" && cnpj
+        ? `/api/demandas?cnpjEntidade=${encodeURIComponent(cnpj)}`
+        : "/api/demandas";
+      const res  = await fetch(url);
       const data = await res.json();
       setDemandas(Array.isArray(data) ? data : []);
     } catch {
@@ -88,7 +106,8 @@ export default function DemandasPage() {
   }
 
   function abrirNovo() {
-    setNome(""); setDescricao(""); setEntidadeId(""); setErro("");
+    const entId = usuarioTipo === "Entidade" ? usuarioEntidadeId : "";
+    setNome(""); setDescricao(""); setEntidadeId(entId); setErro("");
     setModal({ tipo: "novo" });
   }
 

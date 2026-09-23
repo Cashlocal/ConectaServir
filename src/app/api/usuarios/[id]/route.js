@@ -3,13 +3,15 @@ import { NextResponse } from "next/server";
 function mapUser(r) {
   const fotoArr = r.fields["foto"];
   return {
-    id:     r.id,
-    nome:   r.fields["nome"]   ?? "",
-    email:  r.fields["email"]  ?? "",
-    senha:  r.fields["Senha"]  ?? "",
-    clube:  r.fields["Clube"]  ?? "",
-    status: r.fields["Status"] ?? "Ativo",
-    foto:   Array.isArray(fotoArr) ? (fotoArr[0]?.url ?? null) : null,
+    id:           r.id,
+    nome:         r.fields["nome"]          ?? "",
+    email:        r.fields["email"]         ?? "",
+    senha:        r.fields["Senha"]         ?? "",
+    clube:        r.fields["Clube"]         ?? "",
+    tipo:         r.fields["Tipo"]          ?? "",
+    cnpjEntidade: r.fields["CNPJ Entidade"] ?? "",
+    status:       r.fields["Status"]        ?? "Ativo",
+    foto:         Array.isArray(fotoArr) ? (fotoArr[0]?.url ?? null) : null,
   };
 }
 
@@ -24,15 +26,17 @@ export async function PATCH(req, { params }) {
   }
 
   try {
-    const { nome, email, senha, clube, status, fotoUrl } = await req.json();
+    const { nome, email, senha, clube, tipo, cnpjEntidade, status, fotoUrl } = await req.json();
 
     const fields = {};
-    if (nome   !== undefined) fields["nome"]   = nome;
-    if (email  !== undefined) fields["email"]  = email;
-    if (senha  !== undefined) fields["Senha"]  = senha;
-    if (clube  !== undefined) fields["Clube"]  = clube;
-    if (status !== undefined) fields["Status"] = status;
-    if (fotoUrl !== undefined) {
+    if (nome         !== undefined) fields["nome"]          = nome;
+    if (email        !== undefined) fields["email"]         = email;
+    if (senha        !== undefined) fields["Senha"]         = senha;
+    if (clube        !== undefined) fields["Clube"]         = clube;
+    if (tipo         !== undefined) fields["Tipo"]          = tipo;
+    if (cnpjEntidade !== undefined) fields["CNPJ Entidade"] = cnpjEntidade;
+    if (status       !== undefined) fields["Status"]        = status;
+    if (fotoUrl      !== undefined) {
       fields["foto"] = fotoUrl ? [{ url: fotoUrl }] : [];
     }
 

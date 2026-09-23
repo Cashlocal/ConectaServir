@@ -13,6 +13,7 @@ export async function GET(req) {
 
     const { searchParams } = new URL(req.url);
     const voluntarioIdFiltro = searchParams.get("voluntarioId");
+    const cnpjEntidade       = searchParams.get("cnpjEntidade") ?? "";
 
     // Busca certificados, voluntários e entidades em paralelo para resolver linked records
     const volParams = new URLSearchParams();
@@ -22,9 +23,19 @@ export async function GET(req) {
     const entParams = new URLSearchParams();
     entParams.append("fields[]", "Nome");
 
-    let certUrl = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}?sort[0][field]=Atividade&sort[0][direction]=asc`;
+    const filters = [];
     if (voluntarioIdFiltro) {
-      certUrl += `&filterByFormula=${encodeURIComponent(`FIND("${voluntarioIdFiltro}",ARRAYJOIN({Voluntario}))>0`)}`;
+      filters.push(`FIND("${voluntarioIdFiltro}",ARRAYJOIN({Voluntario}))>0`);
+    }
+    if (cnpjEntidade) {
+      const digits = cnpjEntidade.replace(/\D/g, "");
+      filters.push(`FIND("${digits}",SUBSTITUTE(ARRAYJOIN({CNPJ Entidade},""),"-",""))>0`);
+    }
+    const filterStr = filters.length === 1 ? filters[0] : filters.length > 1 ? `AND(${filters.join(",")})` : "";
+
+    let certUrl = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}?sort[0][field]=Atividade&sort[0][direction]=asc`;
+    if (filterStr) {
+      certUrl += `&filterByFormula=${encodeURIComponent(filterStr)}`;
     }
 
     const [certRes, volRes, entRes] = await Promise.all([

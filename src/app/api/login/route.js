@@ -72,16 +72,39 @@ export async function POST(req) {
       );
     }
 
-    const fotoArr = record.fields["foto"];
-    const foto = Array.isArray(fotoArr) ? fotoArr[0]?.url ?? null : null;
+    const fotoArr    = record.fields["foto"];
+    const foto       = Array.isArray(fotoArr) ? fotoArr[0]?.url ?? null : null;
+    const tipo        = String(record.fields["Tipo"] ?? "").trim();
+    const cnpjEntidade = String(record.fields["CNPJ Entidade"] ?? "").trim();
+
+    // Para usuários do tipo Entidade, resolve o entidadeId (record ID da Entidade)
+    let entidadeId = "";
+    if (tipo === "Entidade" && cnpjEntidade) {
+      try {
+        const tableEnt = process.env.AIRTABLE_TABLE_ENTIDADES ?? "tblPIOP4H76gOOPSe";
+        const cnpjDigits = cnpjEntidade.replace(/\D/g, "");
+        const formula = encodeURIComponent(`FIND("${cnpjDigits}",SUBSTITUTE({CNPJ}," ",""))>0`);
+        const entRes = await fetch(
+          `https://api.airtable.com/v0/${baseId}/${tableEnt}?filterByFormula=${formula}&maxRecords=1`,
+          { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" }
+        );
+        if (entRes.ok) {
+          const entData = await entRes.json();
+          entidadeId = entData.records?.[0]?.id ?? "";
+        }
+      } catch {}
+    }
 
     return NextResponse.json({
       ok: true,
       user: {
-        id: record.id,
-        nome: record.fields["nome"] ?? "",
-        email: record.fields["email"] ?? email,
+        id:           record.id,
+        nome:         record.fields["nome"] ?? "",
+        email:        record.fields["email"] ?? email,
         foto,
+        tipo,
+        cnpjEntidade,
+        entidadeId,
       },
     });
   } catch {

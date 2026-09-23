@@ -62,11 +62,12 @@ export async function POST(_req, { params }) {
             headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
             body: JSON.stringify({
               fields: {
-                nome:   entidade.nomePessoaResp || entidade.nome,
-                email:  emailUsuario,
-                Senha:  senha,
-                Tipo:   "Entidade",
-                Status: "Ativo",
+                nome:              entidade.nomePessoaResp || entidade.nome,
+                email:             emailUsuario,
+                Senha:             senha,
+                Tipo:              "Entidade",
+                "CNPJ Entidade":   entidade.cnpj,
+                Status:            "Ativo",
                 // Clube fica em branco para usuários do tipo Entidade
               },
             }),

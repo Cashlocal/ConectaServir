@@ -34,7 +34,7 @@ function mapRecord(r, entMap) {
   };
 }
 
-export async function GET() {
+export async function GET(req) {
   const apiKey = process.env.AIRTABLE_API_KEY;
   const baseId = process.env.AIRTABLE_BASE_ID;
   const table  = process.env.AIRTABLE_TABLE_PROJETOS;
@@ -42,9 +42,19 @@ export async function GET() {
   if (!apiKey || !baseId || !table) return NextResponse.json([]);
 
   try {
+    const { searchParams } = new URL(req.url);
+    const cnpjEntidade = searchParams.get("cnpjEntidade") ?? "";
+
     const params = new URLSearchParams();
     params.append("sort[0][field]",     FIELDS.nomeProjeto);
     params.append("sort[0][direction]", "asc");
+    if (cnpjEntidade) {
+      const digits = cnpjEntidade.replace(/\D/g, "");
+      params.append(
+        "filterByFormula",
+        `FIND("${digits}",SUBSTITUTE(ARRAYJOIN({CNPJ Entidade},""),"-",""))>0`
+      );
+    }
 
     const entParams = new URLSearchParams();
     entParams.append("fields[]", "Nome");

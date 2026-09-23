@@ -54,7 +54,17 @@ export default function CertificadosPage() {
     if (!pronto) return;
     (async () => {
       try {
-        const res  = await fetch("/api/certificados");
+        let url = "/api/certificados";
+        try {
+          const raw = localStorage.getItem("usuario");
+          if (raw) {
+            const u = JSON.parse(raw);
+            if (u.tipo === "Entidade" && u.cnpjEntidade) {
+              url = `/api/certificados?cnpjEntidade=${encodeURIComponent(u.cnpjEntidade)}`;
+            }
+          }
+        } catch {}
+        const res  = await fetch(url);
         const data = await res.json();
         setCertificados(Array.isArray(data) ? data : []);
       } catch { setCertificados([]); }
