@@ -11,9 +11,9 @@ function mapRecord(r) {
     cnpj:               r.fields["CNPJ"]                        ?? "",
     telefoneEntidade:   r.fields["Telefone Entidade"]           ?? "",
     emailEntidade:      r.fields["Email Entidade"]              ?? "",
-    nomePessoaResp:     r.fields["Nome Pessoa Responsavel"]     ?? "",
-    telefonePessoaResp: r.fields["Telefone Pessoa Responsavel"] ?? "",
-    emailPessoaResp:    r.fields["Email Pessoa Responsavel"]    ?? "",
+    nomePessoaResp:     r.fields["Nome Pessoa Responsável"]     ?? "",
+    telefonePessoaResp: r.fields["Telefone Pessoa Responsável"] ?? "",
+    emailPessoaResp:    r.fields["Email Pessoa Responsável"]    ?? "",
     status:             r.fields["Status"]                      ?? "Pendente",
     logo:               Array.isArray(logoArr) ? (logoArr[0]?.url ?? null) : null,
   };
@@ -41,9 +41,9 @@ export async function PATCH(req, { params }) {
       CNPJ:                          (cnpj               ?? "").trim(),
       "Telefone Entidade":           (telefoneEntidade   ?? "").trim(),
       "Email Entidade":              (emailEntidade      ?? "").trim(),
-      "Nome Pessoa Responsavel":     (nomePessoaResp     ?? "").trim(),
-      "Telefone Pessoa Responsavel": (telefonePessoaResp ?? "").trim(),
-      "Email Pessoa Responsavel":    (emailPessoaResp    ?? "").trim(),
+      "Nome Pessoa Responsável":     (nomePessoaResp     ?? "").trim(),
+      "Telefone Pessoa Responsável": (telefonePessoaResp ?? "").trim(),
+      "Email Pessoa Responsável":    (emailPessoaResp    ?? "").trim(),
     };
     if (logoUrl) fields["Logo"] = [{ url: logoUrl }];
 

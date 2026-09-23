@@ -39,9 +39,9 @@ export async function POST(_req, { params }) {
       cnpj:               fields["CNPJ"]                        ?? "",
       telefoneEntidade:   fields["Telefone Entidade"]           ?? "",
       emailEntidade:      fields["Email Entidade"]              ?? "",
-      nomePessoaResp:     fields["Nome Pessoa Responsavel"]     ?? "",
-      telefonePessoaResp: fields["Telefone Pessoa Responsavel"] ?? "",
-      emailPessoaResp:    fields["Email Pessoa Responsavel"]    ?? "",
+      nomePessoaResp:     fields["Nome Pessoa Responsável"]     ?? "",
+      telefonePessoaResp: fields["Telefone Pessoa Responsável"] ?? "",
+      emailPessoaResp:    fields["Email Pessoa Responsável"]    ?? "",
     };
 
     const senha = gerarSenha(entidade.cnpj);
