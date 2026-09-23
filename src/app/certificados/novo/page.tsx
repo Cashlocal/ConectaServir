@@ -34,6 +34,12 @@ export default function NovoCertificadoPage() {
     try {
       const raw = localStorage.getItem("usuario");
       if (!raw) { router.replace("/login"); return; }
+      const u = JSON.parse(raw);
+      // Pré-seleciona entidade para usuário do tipo Entidade
+      if (u.tipo === "Entidade" && u.entidadeId) {
+        setEntidadeId(u.entidadeId);
+        setEntidadeNome("");  // será preenchido após carregar entidades
+      }
     } catch {
       router.replace("/login"); return;
     }
@@ -55,9 +61,22 @@ export default function NovoCertificadoPage() {
     })();
     (async () => {
       try {
-        const res = await fetch("/api/entidades");
+        const raw  = localStorage.getItem("usuario");
+        const u    = raw ? JSON.parse(raw) : {};
+        const cnpj = u.cnpjEntidade ?? "";
+        const tipo = u.tipo ?? "";
+        const url  = tipo === "Entidade" && cnpj
+          ? `/api/entidades?cnpjEntidade=${encodeURIComponent(cnpj)}`
+          : "/api/entidades";
+        const res = await fetch(url);
         const data = await res.json();
-        setEntidades(Array.isArray(data) ? data : []);
+        const lista = Array.isArray(data) ? data : [];
+        setEntidades(lista);
+        // Se Entidade, encontra o nome para exibir
+        if (u.tipo === "Entidade" && u.entidadeId && lista.length > 0) {
+          const mine = lista.find((e: Entidade) => e.id === u.entidadeId);
+          if (mine) setEntidadeNome(mine.nome);
+        }
       } catch {
         setEntidades([]);
       } finally {

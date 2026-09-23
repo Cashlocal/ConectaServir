@@ -405,6 +405,27 @@ export default function EventosPage() {
                           {ev.descricao}
                         </p>
                       )}
+
+                      {/* Entidade vinculada */}
+                      {ev.entidade && (
+                        <div className="mt-2.5 flex items-center gap-1.5 border-t border-[#f1f5f9] pt-2.5">
+                          {ev.entidadeLogo ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={ev.entidadeLogo}
+                              alt={ev.entidade}
+                              className="h-5 w-5 shrink-0 rounded-full object-cover ring-1 ring-[#bfdbfe]"
+                            />
+                          ) : (
+                            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#1d4ed8] text-[9px] font-bold text-white">
+                              {ev.entidade.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <span className="truncate text-[11px] font-medium text-[#475569]">
+                            {ev.entidade}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

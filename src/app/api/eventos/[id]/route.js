@@ -11,13 +11,14 @@ export async function PATCH(req, { params }) {
   }
 
   try {
-    const { nome, descricao, data, bannerUrl } = await req.json();
+    const { nome, descricao, data, bannerUrl, entidadeId } = await req.json();
 
     const fields = {};
-    if (nome !== undefined) fields["Nome Evento"] = nome.trim();
-    if (descricao !== undefined) fields["Descrição"] = descricao.trim();
-    if (data !== undefined) fields["Data"] = data || null;
-    if (bannerUrl !== undefined) fields["Banner"] = bannerUrl ? [{ url: bannerUrl }] : [];
+    if (nome       !== undefined) fields["Nome Evento"] = nome.trim();
+    if (descricao  !== undefined) fields["Descrição"]   = descricao.trim();
+    if (data       !== undefined) fields["Data"]        = data || null;
+    if (bannerUrl  !== undefined) fields["Banner"]      = bannerUrl ? [{ url: bannerUrl }] : [];
+    if (entidadeId !== undefined) fields["Entidade"]    = entidadeId ? [entidadeId] : [];
 
     const res = await fetch(
       `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}/${id}`,

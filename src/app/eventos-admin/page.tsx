@@ -54,10 +54,14 @@ export default function EventosAdminPage() {
   const [excluindo, setExcluindo] = useState(false);
   const [erro, setErro] = useState("");
 
-  const [nome, setNome] = useState("");
+  const [nome, setNome]           = useState("");
   const [descricao, setDescricao] = useState("");
   const [dataLocal, setDataLocal] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
+  const [entidadeId, setEntidadeId]   = useState("");
+  const [entidades, setEntidades]     = useState<{ id: string; nome: string }[]>([]);
+  const [usuarioTipo, setUsuarioTipo]           = useState("");
+  const [usuarioEntidadeId, setUsuarioEntidadeId] = useState("");
 
   const nomeRef = useRef<HTMLInputElement>(null);
 
@@ -65,6 +69,9 @@ export default function EventosAdminPage() {
     try {
       const raw = localStorage.getItem("usuario");
       if (!raw) { router.replace("/login"); return; }
+      const u = JSON.parse(raw);
+      setUsuarioTipo(u.tipo ?? "");
+      setUsuarioEntidadeId(u.entidadeId ?? "");
     } catch {
       router.replace("/login"); return;
     }
@@ -72,7 +79,11 @@ export default function EventosAdminPage() {
   }, [router]);
 
   useEffect(() => {
-    if (pronto) carregarEventos();
+    if (pronto) {
+      carregarEventos();
+      carregarEntidades();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pronto]);
 
   useEffect(() => {
@@ -84,7 +95,14 @@ export default function EventosAdminPage() {
   async function carregarEventos() {
     setCarregando(true);
     try {
-      const res = await fetch("/api/eventos");
+      const raw  = localStorage.getItem("usuario");
+      const u    = raw ? JSON.parse(raw) : {};
+      const eId  = u.entidadeId ?? "";
+      const tipo = u.tipo ?? "";
+      const url  = tipo === "Entidade" && eId
+        ? `/api/eventos?entidadeId=${encodeURIComponent(eId)}`
+        : "/api/eventos";
+      const res = await fetch(url);
       const data = await res.json();
       const list: Evento[] = Array.isArray(data.records) ? data.records : [];
       list.sort((a, b) => {
@@ -100,8 +118,18 @@ export default function EventosAdminPage() {
     }
   }
 
+  async function carregarEntidades() {
+    try {
+      const res  = await fetch("/api/entidades");
+      const data = await res.json();
+      setEntidades(Array.isArray(data) ? data : []);
+    } catch { setEntidades([]); }
+  }
+
   function abrirNovo() {
-    setNome(""); setDescricao(""); setDataLocal(""); setBannerUrl(""); setErro("");
+    const eId = usuarioTipo === "Entidade" ? usuarioEntidadeId : "";
+    setNome(""); setDescricao(""); setDataLocal(""); setBannerUrl("");
+    setEntidadeId(eId); setErro("");
     setModal({ tipo: "novo" });
   }
 
@@ -110,6 +138,7 @@ export default function EventosAdminPage() {
     setDescricao(ev.descricao);
     setDataLocal(isoParaDatetimeLocal(ev.data));
     setBannerUrl(ev.banner ?? "");
+    setEntidadeId((ev as unknown as { entidadeId?: string }).entidadeId ?? "");
     setErro("");
     setModal({ tipo: "editar", evento: ev });
   }
@@ -135,6 +164,7 @@ export default function EventosAdminPage() {
       if (dataLocal) body.data = datetimeLocalParaIso(dataLocal);
       if (bannerUrl.trim()) body.bannerUrl = bannerUrl.trim();
       else if (isEditar) body.bannerUrl = "";
+      if (entidadeId) body.entidadeId = entidadeId;
 
       const res = await fetch(url, {
         method,
@@ -374,6 +404,18 @@ export default function EventosAdminPage() {
                   <img src={bannerUrl} alt="Preview" className="mt-2 h-24 w-full rounded-xl object-cover" />
                 )}
               </div>
+
+              {usuarioTipo !== "Entidade" && (
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Entidade</label>
+                  <select value={entidadeId} onChange={(e) => setEntidadeId(e.target.value)} className={inputClass}>
+                    <option value="">Nenhuma (evento geral)</option>
+                    {entidades.map((e) => (
+                      <option key={e.id} value={e.id}>{e.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {erro && (
                 <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 [border-width:0.5px]">
