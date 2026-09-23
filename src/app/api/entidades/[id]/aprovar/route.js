@@ -1,0 +1,73 @@
+import { NextResponse } from "next/server";
+
+const TABLE   = process.env.AIRTABLE_TABLE_ENTIDADES ?? "tblPIOP4H76gOOPSe";
+const WEBHOOK = "https://integrador.cashlocal.com.br/webhook/d1be98bc-923e-4dcf-ae5a-974ef17932e9";
+
+export async function POST(_req, { params }) {
+  const { id } = await params;
+  const apiKey = process.env.AIRTABLE_API_KEY;
+  const baseId = process.env.AIRTABLE_BASE_ID;
+
+  if (!apiKey || !baseId) {
+    return NextResponse.json({ error: "Configuração do servidor incompleta." }, { status: 503 });
+  }
+
+  try {
+    // 1. Buscar dados atuais da entidade
+    const recRes = await fetch(
+      `https://api.airtable.com/v0/${baseId}/${TABLE}/${id}`,
+      { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" }
+    );
+    if (!recRes.ok) {
+      return NextResponse.json({ error: "Entidade não encontrada." }, { status: 404 });
+    }
+    const rec = await recRes.json();
+    const fields = rec.fields ?? {};
+
+    const entidade = {
+      id,
+      nome:               fields["Nome"]                        ?? "",
+      descricao:          fields["Descricao"]                   ?? "",
+      cnpj:               fields["CNPJ"]                        ?? "",
+      telefoneEntidade:   fields["Telefone Entidade"]           ?? "",
+      emailEntidade:      fields["Email Entidade"]              ?? "",
+      nomePessoaResp:     fields["Nome Pessoa Responsavel"]     ?? "",
+      telefonePessoaResp: fields["Telefone Pessoa Responsavel"] ?? "",
+      emailPessoaResp:    fields["Email Pessoa Responsavel"]    ?? "",
+    };
+
+    // 2. Atualizar status para Aprovada no Airtable
+    const patchRes = await fetch(
+      `https://api.airtable.com/v0/${baseId}/${TABLE}/${id}`,
+      {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ fields: { Status: "Aprovada" } }),
+      }
+    );
+    if (!patchRes.ok) {
+      const err = await patchRes.json().catch(() => ({}));
+      return NextResponse.json(
+        { error: err?.error?.message ?? "Erro ao atualizar status." },
+        { status: patchRes.status }
+      );
+    }
+
+    // 3. Disparar webhook para envio de e-mails
+    try {
+      await fetch(WEBHOOK, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entidade, status: "Aprovada" }),
+      });
+    } catch (webhookErr) {
+      // Webhook falhou, mas a aprovação já foi salva — não bloquear a resposta
+      console.error("Webhook error:", webhookErr);
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("Erro ao aprovar entidade:", err);
+    return NextResponse.json({ error: "Erro inesperado." }, { status: 500 });
+  }
+}

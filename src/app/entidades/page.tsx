@@ -3,13 +3,40 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Entidade = { id: string; nome: string; descricao: string; telefone: string; email: string };
+type Entidade = {
+  id: string;
+  nome: string;
+  descricao: string;
+  cnpj: string;
+  telefoneEntidade: string;
+  emailEntidade: string;
+  nomePessoaResp: string;
+  telefonePessoaResp: string;
+  emailPessoaResp: string;
+  status: string;
+};
 
 type ModalState =
   | { tipo: "novo" }
   | { tipo: "editar"; entidade: Entidade }
   | { tipo: "excluir"; entidade: Entidade }
   | null;
+
+const inputClass =
+  "w-full rounded-xl border border-[#bfdbfe] bg-[#f8faff] px-4 py-3 text-[15px] text-[#0f172a] placeholder-[#94a3b8] outline-none transition-all [border-width:0.5px] focus:border-[#1a44a6] focus:bg-white focus:ring-2 focus:ring-[#1a44a6]/15";
+
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, string> = {
+    Pendente: "bg-[#fef9c3] text-[#854d0e] border-[#fde047]",
+    Aprovada: "bg-[#dcfce7] text-[#15803d] border-[#86efac]",
+  };
+  const cls = map[status] ?? "bg-[#f1f5f9] text-[#475569] border-[#e2e8f0]";
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[12px] font-semibold [border-width:0.5px] ${cls}`}>
+      {status}
+    </span>
+  );
+}
 
 export default function EntidadesPage() {
   const router = useRouter();
@@ -20,11 +47,16 @@ export default function EntidadesPage() {
   const [modal, setModal]           = useState<ModalState>(null);
   const [salvando, setSalvando]     = useState(false);
   const [erro, setErro]             = useState("");
+  const [aprovando, setAprovando]   = useState<string | null>(null);
 
-  const [nome, setNome]           = useState("");
-  const [descricao, setDescricao] = useState("");
-  const [telefone, setTelefone]   = useState("");
-  const [email, setEmail]         = useState("");
+  const [nome, setNome]                             = useState("");
+  const [descricao, setDescricao]                   = useState("");
+  const [cnpj, setCnpj]                             = useState("");
+  const [telefoneEntidade, setTelefoneEntidade]     = useState("");
+  const [emailEntidade, setEmailEntidade]           = useState("");
+  const [nomePessoaResp, setNomePessoaResp]         = useState("");
+  const [telefonePessoaResp, setTelefonePessoaResp] = useState("");
+  const [emailPessoaResp, setEmailPessoaResp]       = useState("");
 
   const nomeRef = useRef<HTMLInputElement>(null);
 
@@ -54,22 +86,24 @@ export default function EntidadesPage() {
     }
   }
 
-  function abrirNovo() {
-    setNome(""); setDescricao(""); setTelefone(""); setEmail(""); setErro("");
-    setModal({ tipo: "novo" });
+  function camposVazios() {
+    setNome(""); setDescricao(""); setCnpj("");
+    setTelefoneEntidade(""); setEmailEntidade("");
+    setNomePessoaResp(""); setTelefonePessoaResp(""); setEmailPessoaResp("");
+    setErro("");
   }
 
+  function abrirNovo() { camposVazios(); setModal({ tipo: "novo" }); }
+
   function abrirEditar(e: Entidade) {
-    setNome(e.nome); setDescricao(e.descricao);
-    setTelefone(e.telefone); setEmail(e.email); setErro("");
+    setNome(e.nome); setDescricao(e.descricao); setCnpj(e.cnpj);
+    setTelefoneEntidade(e.telefoneEntidade); setEmailEntidade(e.emailEntidade);
+    setNomePessoaResp(e.nomePessoaResp); setTelefonePessoaResp(e.telefonePessoaResp);
+    setEmailPessoaResp(e.emailPessoaResp); setErro("");
     setModal({ tipo: "editar", entidade: e });
   }
 
-  function abrirExcluir(e: Entidade) {
-    setErro("");
-    setModal({ tipo: "excluir", entidade: e });
-  }
-
+  function abrirExcluir(e: Entidade) { setErro(""); setModal({ tipo: "excluir", entidade: e }); }
   function fechar() { setModal(null); setErro(""); }
 
   async function salvar() {
@@ -78,22 +112,24 @@ export default function EntidadesPage() {
 
     try {
       const isEditar = modal?.tipo === "editar";
-      const url    = isEditar ? `/api/entidades/${(modal as { tipo: "editar"; entidade: Entidade }).entidade.id}` : "/api/entidades";
+      const url    = isEditar
+        ? `/api/entidades/${(modal as { tipo: "editar"; entidade: Entidade }).entidade.id}`
+        : "/api/entidades";
       const method = isEditar ? "PATCH" : "POST";
 
       const res  = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome, descricao, telefone, email }),
+        body: JSON.stringify({ nome, descricao, cnpj, telefoneEntidade, emailEntidade,
+                               nomePessoaResp, telefonePessoaResp, emailPessoaResp }),
       });
       const data = await res.json();
-
       if (!res.ok) { setErro(data.error ?? "Erro ao salvar."); return; }
 
       if (isEditar) {
         setEntidades((prev) => prev.map((e) => (e.id === data.id ? data : e)));
       } else {
-        setEntidades((prev) => [...prev, data].sort((a, b) => a.nome.localeCompare(b.nome)));
+        setEntidades((prev) => [...prev, data].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")));
       }
       fechar();
     } catch {
@@ -121,6 +157,26 @@ export default function EntidadesPage() {
     }
   }
 
+  async function aprovar(ent: Entidade) {
+    if (aprovando) return;
+    setAprovando(ent.id);
+    try {
+      const res = await fetch(`/api/entidades/${ent.id}/aprovar`, { method: "POST" });
+      if (res.ok) {
+        setEntidades((prev) =>
+          prev.map((e) => (e.id === ent.id ? { ...e, status: "Aprovada" } : e))
+        );
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error ?? "Erro ao aprovar. Tente novamente.");
+      }
+    } catch {
+      alert("Erro de conexão. Tente novamente.");
+    } finally {
+      setAprovando(null);
+    }
+  }
+
   if (!pronto) return null;
 
   const q = busca.toLowerCase();
@@ -129,32 +185,24 @@ export default function EntidadesPage() {
         (e) =>
           e.nome.toLowerCase().includes(q) ||
           e.descricao.toLowerCase().includes(q) ||
-          e.telefone.toLowerCase().includes(q) ||
-          e.email.toLowerCase().includes(q)
+          e.nomePessoaResp.toLowerCase().includes(q) ||
+          e.emailEntidade.toLowerCase().includes(q)
       )
     : entidades;
-
-  const inputClass =
-    "w-full rounded-xl border border-[#bfdbfe] bg-[#f8faff] px-4 py-3 text-[15px] text-[#0f172a] placeholder-[#94a3b8] outline-none transition-all [border-width:0.5px] focus:border-[#1a44a6] focus:bg-white focus:ring-2 focus:ring-[#1a44a6]/15";
 
   return (
     <main className="min-h-[calc(100vh-120px)] bg-[#eff6ff] px-6 py-12 md:px-16 md:py-[48px]">
       {/* Cabeçalho */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1
-            className="text-[32px] font-bold leading-tight text-[#1e3a8a] md:text-[40px]"
-            style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}
-          >
+          <h1 className="text-[32px] font-bold leading-tight text-[#1e3a8a] md:text-[40px]"
+            style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}>
             Entidades
           </h1>
           <p className="mt-1 text-base text-[#475569]">Gerencie as entidades parceiras do Rotary</p>
         </div>
-        <button
-          type="button"
-          onClick={abrirNovo}
-          className="inline-flex items-center gap-2 self-start rounded-xl bg-[#1d4ed8] px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#1e40af] sm:self-auto"
-        >
+        <button type="button" onClick={abrirNovo}
+          className="inline-flex items-center gap-2 self-start rounded-xl bg-[#1d4ed8] px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#1e40af] sm:self-auto">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
           </svg>
@@ -162,23 +210,18 @@ export default function EntidadesPage() {
         </button>
       </div>
 
-      {/* Campo de busca */}
+      {/* Busca */}
       <div className="relative mb-4">
         <svg className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#94a3b8]"
           width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
-        <input
-          type="text"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          placeholder="Buscar por nome, descrição, telefone ou email..."
-          className="w-full rounded-xl border border-[#bfdbfe] bg-white py-3 pl-11 pr-10 text-[14px] text-[#0f172a] placeholder-[#94a3b8] outline-none [border-width:0.5px] focus:border-[#1a44a6] focus:ring-2 focus:ring-[#1a44a6]/15"
-        />
+        <input type="text" value={busca} onChange={(e) => setBusca(e.target.value)}
+          placeholder="Buscar por nome, responsável ou e-mail..."
+          className="w-full rounded-xl border border-[#bfdbfe] bg-white py-3 pl-11 pr-10 text-[14px] text-[#0f172a] placeholder-[#94a3b8] outline-none [border-width:0.5px] focus:border-[#1a44a6] focus:ring-2 focus:ring-[#1a44a6]/15" />
         {busca && (
           <button type="button" onClick={() => setBusca("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-[#94a3b8] hover:text-[#475569]"
-            aria-label="Limpar busca">
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-[#94a3b8] hover:text-[#475569]" aria-label="Limpar busca">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -214,21 +257,49 @@ export default function EntidadesPage() {
               <thead>
                 <tr className="border-b border-[#e2e8f0] bg-[#f8faff]">
                   <th className="px-6 py-3.5 text-left text-[12px] font-semibold uppercase tracking-wide text-[#64748b]">Nome</th>
-                  <th className="px-6 py-3.5 text-left text-[12px] font-semibold uppercase tracking-wide text-[#64748b]">Descrição</th>
-                  <th className="hidden px-6 py-3.5 text-left text-[12px] font-semibold uppercase tracking-wide text-[#64748b] md:table-cell">Telefone</th>
-                  <th className="hidden px-6 py-3.5 text-left text-[12px] font-semibold uppercase tracking-wide text-[#64748b] md:table-cell">Email</th>
-                  <th className="w-28 px-6 py-3.5 text-right text-[12px] font-semibold uppercase tracking-wide text-[#64748b]">Ações</th>
+                  <th className="hidden px-6 py-3.5 text-left text-[12px] font-semibold uppercase tracking-wide text-[#64748b] lg:table-cell">Responsável</th>
+                  <th className="hidden px-6 py-3.5 text-left text-[12px] font-semibold uppercase tracking-wide text-[#64748b] md:table-cell">E-mail Entidade</th>
+                  <th className="px-6 py-3.5 text-left text-[12px] font-semibold uppercase tracking-wide text-[#64748b]">Status</th>
+                  <th className="px-6 py-3.5 text-right text-[12px] font-semibold uppercase tracking-wide text-[#64748b]">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f1f5f9]">
                 {filtradas.map((ent) => (
                   <tr key={ent.id} className="transition-colors hover:bg-[#f8faff]">
-                    <td className="px-6 py-4 font-medium text-[#1e3a8a]">{ent.nome}</td>
-                    <td className="px-6 py-4 text-[#475569]">{ent.descricao || <span className="text-[#cbd5e1]">—</span>}</td>
-                    <td className="hidden px-6 py-4 text-[#475569] md:table-cell">{ent.telefone || <span className="text-[#cbd5e1]">—</span>}</td>
-                    <td className="hidden px-6 py-4 text-[#475569] md:table-cell">{ent.email || <span className="text-[#cbd5e1]">—</span>}</td>
+                    <td className="px-6 py-4">
+                      <p className="font-medium text-[#1e3a8a]">{ent.nome}</p>
+                      {ent.cnpj && <p className="text-[12px] text-[#94a3b8]">CNPJ: {ent.cnpj}</p>}
+                    </td>
+                    <td className="hidden px-6 py-4 text-[#475569] lg:table-cell">
+                      {ent.nomePessoaResp || <span className="text-[#cbd5e1]">—</span>}
+                    </td>
+                    <td className="hidden px-6 py-4 text-[#475569] md:table-cell">
+                      {ent.emailEntidade || <span className="text-[#cbd5e1]">—</span>}
+                    </td>
+                    <td className="px-6 py-4">
+                      <StatusBadge status={ent.status} />
+                    </td>
                     <td className="px-6 py-4 text-right">
                       <div className="inline-flex items-center gap-1.5">
+                        {ent.status === "Pendente" && (
+                          <button type="button"
+                            onClick={() => aprovar(ent)}
+                            disabled={aprovando === ent.id}
+                            className="inline-flex items-center gap-1 rounded-lg bg-[#dcfce7] px-2.5 py-1 text-[12px] font-semibold text-[#15803d] transition-colors hover:bg-[#bbf7d0] disabled:opacity-60"
+                            title="Aprovar entidade">
+                            {aprovando === ent.id ? (
+                              <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                              </svg>
+                            ) : (
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="M20 6L9 17l-5-5" />
+                              </svg>
+                            )}
+                            Aprovar
+                          </button>
+                        )}
                         <button type="button" onClick={() => abrirEditar(ent)}
                           className="rounded-lg p-1.5 text-[#64748b] transition-colors hover:bg-[#eff6ff] hover:text-[#1d4ed8]"
                           aria-label={`Editar ${ent.nome}`} title="Editar">
@@ -257,50 +328,74 @@ export default function EntidadesPage() {
 
       {/* Modal novo/editar */}
       {(modal?.tipo === "novo" || modal?.tipo === "editar") && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4" role="dialog" aria-modal="true">
-          <button type="button" className="absolute inset-0 bg-black/40" onClick={fechar} aria-label="Fechar" />
-          <div className="relative w-full max-w-md rounded-2xl bg-white p-8 shadow-[0_8px_40px_rgba(29,78,216,0.15)]">
+        <div className="fixed inset-0 z-[300] flex items-start justify-center overflow-y-auto p-4 py-8" role="dialog" aria-modal="true">
+          <button type="button" className="fixed inset-0 bg-black/40" onClick={fechar} aria-label="Fechar" />
+          <div className="relative w-full max-w-lg rounded-2xl bg-white p-8 shadow-[0_8px_40px_rgba(29,78,216,0.15)]">
             <h2 className="mb-6 text-[22px] font-bold text-[#1e3a8a]" style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}>
               {modal.tipo === "novo" ? "Nova Entidade" : "Editar Entidade"}
             </h2>
 
+            <p className="mb-3 text-[12px] font-semibold uppercase tracking-wide text-[#64748b]">Dados da Entidade</p>
             <div className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">
-                  Nome <span className="text-[#dc2626]">*</span>
-                </label>
+                <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Nome <span className="text-[#dc2626]">*</span></label>
                 <input ref={nomeRef} type="text" value={nome} onChange={(e) => setNome(e.target.value)}
                   placeholder="Ex: GAMA" className={inputClass}
                   onKeyDown={(e) => { if (e.key === "Enter") salvar(); }} />
               </div>
-
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Descrição</label>
                 <input type="text" value={descricao} onChange={(e) => setDescricao(e.target.value)}
                   placeholder="Ex: Casa de apoio" className={inputClass} />
               </div>
-
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Telefone</label>
-                <input type="tel" value={telefone} onChange={(e) => setTelefone(e.target.value)}
-                  placeholder="(00) 00000-0000" className={inputClass} />
+                <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">CNPJ</label>
+                <input type="text" value={cnpj} onChange={(e) => setCnpj(e.target.value)}
+                  placeholder="00.000.000/0000-00" className={inputClass} />
               </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Email</label>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                  placeholder="contato@entidade.org" className={inputClass} />
-              </div>
-
-              {erro && (
-                <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 [border-width:0.5px]">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-                  </svg>
-                  {erro}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Telefone Entidade</label>
+                  <input type="tel" value={telefoneEntidade} onChange={(e) => setTelefoneEntidade(e.target.value)}
+                    placeholder="(00) 00000-0000" className={inputClass} />
                 </div>
-              )}
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">E-mail Entidade</label>
+                  <input type="email" value={emailEntidade} onChange={(e) => setEmailEntidade(e.target.value)}
+                    placeholder="contato@entidade.org" className={inputClass} />
+                </div>
+              </div>
             </div>
+
+            <p className="mb-3 mt-6 text-[12px] font-semibold uppercase tracking-wide text-[#64748b]">Pessoa Responsável</p>
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Nome</label>
+                <input type="text" value={nomePessoaResp} onChange={(e) => setNomePessoaResp(e.target.value)}
+                  placeholder="Nome completo" className={inputClass} />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Telefone</label>
+                  <input type="tel" value={telefonePessoaResp} onChange={(e) => setTelefonePessoaResp(e.target.value)}
+                    placeholder="(00) 00000-0000" className={inputClass} />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">E-mail</label>
+                  <input type="email" value={emailPessoaResp} onChange={(e) => setEmailPessoaResp(e.target.value)}
+                    placeholder="responsavel@email.com" className={inputClass} />
+                </div>
+              </div>
+            </div>
+
+            {erro && (
+              <div className="mt-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 [border-width:0.5px]">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                {erro}
+              </div>
+            )}
 
             <div className="mt-7 flex justify-end gap-3">
               <button type="button" onClick={fechar} disabled={salvando}
@@ -339,9 +434,8 @@ export default function EntidadesPage() {
             <p className="text-center text-[14px] text-[#475569]">
               A entidade{" "}
               <span className="font-semibold text-[#1e3a8a]">{modal.entidade.nome}</span>{" "}
-              será removida permanentemente. Esta ação não pode ser desfeita.
+              será removida permanentemente.
             </p>
-
             {erro && (
               <div className="mt-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 [border-width:0.5px]">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0" aria-hidden="true">
@@ -350,7 +444,6 @@ export default function EntidadesPage() {
                 {erro}
               </div>
             )}
-
             <div className="mt-7 flex justify-center gap-3">
               <button type="button" onClick={fechar} disabled={salvando}
                 className="rounded-xl border border-[#e2e8f0] px-5 py-2.5 text-[14px] font-medium text-[#475569] transition-colors hover:bg-[#f8faff] [border-width:0.5px]">

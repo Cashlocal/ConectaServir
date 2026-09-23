@@ -1,32 +1,35 @@
 import { NextResponse } from "next/server";
 
-const TABLE_ENTIDADES = process.env.AIRTABLE_TABLE_ENTIDADES ?? "tblPIOP4H76gOOPSe";
+const TABLE = process.env.AIRTABLE_TABLE_ENTIDADES ?? "tblPIOP4H76gOOPSe";
+
+function mapRecord(r) {
+  return {
+    id:                 r.id,
+    nome:               r.fields["Nome"]                    ?? "",
+    descricao:          r.fields["Descricao"]               ?? "",
+    cnpj:               r.fields["CNPJ"]                    ?? "",
+    telefoneEntidade:   r.fields["Telefone Entidade"]       ?? "",
+    emailEntidade:      r.fields["Email Entidade"]          ?? "",
+    nomePessoaResp:     r.fields["Nome Pessoa Responsavel"] ?? "",
+    telefonePessoaResp: r.fields["Telefone Pessoa Responsavel"] ?? "",
+    emailPessoaResp:    r.fields["Email Pessoa Responsavel"]    ?? "",
+    status:             r.fields["Status"]                  ?? "Pendente",
+  };
+}
 
 export async function GET() {
   const apiKey = process.env.AIRTABLE_API_KEY;
   const baseId = process.env.AIRTABLE_BASE_ID;
-
   if (!apiKey || !baseId) return NextResponse.json([]);
 
   try {
-    const url = `https://api.airtable.com/v0/${baseId}/${TABLE_ENTIDADES}?sort[0][field]=Nome&sort[0][direction]=asc`;
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${apiKey}` },
-      cache: "no-store",
-    });
-
+    const res = await fetch(
+      `https://api.airtable.com/v0/${baseId}/${TABLE}?sort[0][field]=Nome&sort[0][direction]=asc`,
+      { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" }
+    );
     if (!res.ok) return NextResponse.json([]);
-
     const data = await res.json();
-    const entidades = (data.records ?? []).map((r) => ({
-      id:       r.id,
-      nome:     r.fields["Nome"]      ?? "",
-      descricao:r.fields["Descricao"] ?? "",
-      telefone: r.fields["Telefone"]  ?? "",
-      email:    r.fields["Email"]     ?? "",
-    }));
-
-    return NextResponse.json(entidades);
+    return NextResponse.json((data.records ?? []).map(mapRecord));
   } catch {
     return NextResponse.json([]);
   }
@@ -35,32 +38,35 @@ export async function GET() {
 export async function POST(req) {
   const apiKey = process.env.AIRTABLE_API_KEY;
   const baseId = process.env.AIRTABLE_BASE_ID;
-
   if (!apiKey || !baseId) {
     return NextResponse.json({ error: "Configuração do servidor incompleta." }, { status: 503 });
   }
 
   try {
-    const { nome, descricao, telefone, email } = await req.json();
+    const { nome, descricao, cnpj, telefoneEntidade, emailEntidade,
+            nomePessoaResp, telefonePessoaResp, emailPessoaResp } = await req.json();
+
     if (!nome?.trim()) {
       return NextResponse.json({ error: "O campo Nome é obrigatório." }, { status: 400 });
     }
 
-    const res = await fetch(
-      `https://api.airtable.com/v0/${baseId}/${TABLE_ENTIDADES}`,
-      {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fields: {
-            Nome:      nome.trim(),
-            Descricao: (descricao ?? "").trim(),
-            Telefone:  (telefone  ?? "").trim(),
-            Email:     (email     ?? "").trim(),
-          },
-        }),
-      }
-    );
+    const res = await fetch(`https://api.airtable.com/v0/${baseId}/${TABLE}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fields: {
+          Nome:                        nome.trim(),
+          Descricao:                   (descricao          ?? "").trim(),
+          CNPJ:                        (cnpj               ?? "").trim(),
+          "Telefone Entidade":         (telefoneEntidade   ?? "").trim(),
+          "Email Entidade":            (emailEntidade      ?? "").trim(),
+          "Nome Pessoa Responsavel":   (nomePessoaResp     ?? "").trim(),
+          "Telefone Pessoa Responsavel": (telefonePessoaResp ?? "").trim(),
+          "Email Pessoa Responsavel":  (emailPessoaResp    ?? "").trim(),
+          Status:                      "Pendente",
+        },
+      }),
+    });
 
     const data = await res.json();
     if (!res.ok) {
@@ -70,13 +76,7 @@ export async function POST(req) {
       );
     }
 
-    return NextResponse.json({
-      id:       data.id,
-      nome:     data.fields["Nome"]      ?? "",
-      descricao:data.fields["Descricao"] ?? "",
-      telefone: data.fields["Telefone"]  ?? "",
-      email:    data.fields["Email"]     ?? "",
-    });
+    return NextResponse.json(mapRecord(data));
   } catch {
     return NextResponse.json({ error: "Erro inesperado." }, { status: 500 });
   }

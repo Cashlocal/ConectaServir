@@ -93,6 +93,16 @@ export default function HomePage() {
                 </svg>
                 Calendário de Eventos
               </Link>
+              <Link
+                href="/entidades/cadastrar"
+                className="col-span-1 inline-flex w-full items-center justify-center gap-2 rounded-lg border-2 border-[#7c3aed] bg-white px-6 py-3 text-base font-medium text-[#7c3aed] transition-colors hover:bg-[#f5f3ff] sm:col-span-2"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+                Cadastrar minha entidade
+              </Link>
             </div>
           </div>
           <div className="relative w-full shrink-0 overflow-hidden rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.07)] transition-shadow duration-300 ease-out hover:shadow-[0_12px_40px_rgba(26,68,166,0.18)] md:w-[min(100%,520px)] md:max-w-[52%] lg:max-w-[520px]">
