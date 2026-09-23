@@ -38,17 +38,17 @@ export async function GET(req) {
     url.searchParams.set("sort[0][field]", "Data");
     url.searchParams.set("sort[0][direction]", "asc");
 
-    if (entidadeId) {
-      url.searchParams.set(
-        "filterByFormula",
-        `FIND("${entidadeId}",ARRAYJOIN({Entidade},""))>0`
-      );
-    } else if (cnpjEntidade) {
-      const digits = cnpjEntidade.replace(/\D/g, "");
-      url.searchParams.set(
-        "filterByFormula",
-        `FIND("${digits}",SUBSTITUTE(ARRAYJOIN({CNPJ Entidade},""),"-",""))>0`
-      );
+    // Filtra por CNPJ Entidade (lookup field) — mais confiável que ID de linked record
+    if (cnpjEntidade || entidadeId) {
+      const digits = cnpjEntidade
+        ? cnpjEntidade.replace(/\D/g, "")
+        : entidadeId.replace(/\D/g, "");
+      if (digits) {
+        url.searchParams.set(
+          "filterByFormula",
+          `FIND("${digits}",SUBSTITUTE(ARRAYJOIN({CNPJ Entidade},""),"-",""))>0`
+        );
+      }
     }
 
     const entParams = new URLSearchParams();

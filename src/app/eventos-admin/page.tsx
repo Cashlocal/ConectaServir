@@ -101,10 +101,10 @@ export default function EventosAdminPage() {
     try {
       const raw  = localStorage.getItem("usuario");
       const u    = raw ? JSON.parse(raw) : {};
-      const eId  = u.entidadeId ?? "";
+      const cnpj = u.cnpjEntidade ?? "";
       const tipo = u.tipo ?? "";
-      const url  = tipo === "Entidade" && eId
-        ? `/api/eventos?entidadeId=${encodeURIComponent(eId)}`
+      const url  = tipo === "Entidade" && cnpj
+        ? `/api/eventos?cnpjEntidade=${encodeURIComponent(cnpj)}`
         : "/api/eventos";
       const res = await fetch(url);
       const data = await res.json();
