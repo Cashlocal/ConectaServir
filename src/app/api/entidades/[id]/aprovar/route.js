@@ -49,7 +49,11 @@ export async function POST(_req, { params }) {
 
     // 2. Criar usuário do tipo entidade no Airtable (tabela Usuários)
     let usuarioCriado = null;
-    if (tableUsuarios && emailUsuario) {
+    if (!tableUsuarios) {
+      console.error("AIRTABLE_TABLE_USUARIOS não configurado");
+    } else if (!emailUsuario) {
+      console.error("Entidade sem e-mail — usuário não criado");
+    } else {
       try {
         const userRes = await fetch(
           `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableUsuarios)}`,
@@ -61,19 +65,19 @@ export async function POST(_req, { params }) {
                 nome:   entidade.nomePessoaResp || entidade.nome,
                 email:  emailUsuario,
                 Senha:  senha,
-                Clube:  entidade.nome,
                 Tipo:   "Entidade",
                 Status: "Ativo",
+                // Clube fica em branco para usuários do tipo Entidade
               },
             }),
           }
         );
+        const userData = await userRes.json();
         if (userRes.ok) {
-          const userData = await userRes.json();
           usuarioCriado = { id: userData.id, email: emailUsuario };
+          console.log("Usuário entidade criado:", usuarioCriado);
         } else {
-          const errData = await userRes.json().catch(() => ({}));
-          console.error("Erro ao criar usuário entidade:", errData);
+          console.error("Erro ao criar usuário entidade:", JSON.stringify(userData));
         }
       } catch (userErr) {
         console.error("Erro ao criar usuário entidade:", userErr);
