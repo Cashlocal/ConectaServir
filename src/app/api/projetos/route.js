@@ -17,6 +17,7 @@ const FIELDS = {
 function mapRecord(r, entMap) {
   const entIds = r.fields[FIELDS.entidade];
   const entId  = Array.isArray(entIds) ? entIds[0] : null;
+  const ent    = entId ? (entMap[entId] ?? {}) : {};
   return {
     id:                     r.id,
     nomeProjeto:            r.fields[FIELDS.nomeProjeto]            ?? "",
@@ -28,7 +29,8 @@ function mapRecord(r, entMap) {
     email:                  r.fields[FIELDS.email]                  ?? "",
     telefone:               r.fields[FIELDS.telefone]               ?? "",
     entidadeId:             entId ?? "",
-    entidade:               entId ? (entMap[entId] ?? "") : "",
+    entidade:               ent.nome ?? "",
+    entidadeLogo:           ent.logo ?? null,
   };
 }
 
@@ -46,6 +48,7 @@ export async function GET() {
 
     const entParams = new URLSearchParams();
     entParams.append("fields[]", "Nome");
+    entParams.append("fields[]", "Logo");
 
     const [projRes, entRes] = await Promise.all([
       fetch(
@@ -64,7 +67,11 @@ export async function GET() {
     if (entRes.ok) {
       const ed = await entRes.json();
       for (const r of ed.records ?? []) {
-        entMap[r.id] = r.fields["Nome"] ?? "";
+        const logoArr = r.fields["Logo"];
+        entMap[r.id] = {
+          nome: r.fields["Nome"] ?? "",
+          logo: Array.isArray(logoArr) ? (logoArr[0]?.url ?? null) : null,
+        };
       }
     }
 
@@ -137,7 +144,7 @@ export async function POST(request) {
       } catch {}
     }
 
-    return NextResponse.json({ ...mapRecord(data, { [entidadeId]: entidadeNome }), success: true });
+    return NextResponse.json({ ...mapRecord(data, { [entidadeId]: { nome: entidadeNome, logo: null } }), success: true });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Erro inesperado." }, { status: 500 });
   }

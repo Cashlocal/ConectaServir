@@ -14,6 +14,7 @@ type Entidade = {
   telefonePessoaResp: string;
   emailPessoaResp: string;
   status: string;
+  logo?: string | null;
 };
 
 type ModalState =
@@ -57,8 +58,25 @@ export default function EntidadesPage() {
   const [nomePessoaResp, setNomePessoaResp]         = useState("");
   const [telefonePessoaResp, setTelefonePessoaResp] = useState("");
   const [emailPessoaResp, setEmailPessoaResp]       = useState("");
+  const [logoFile, setLogoFile]                     = useState<File | null>(null);
+  const [logoPreview, setLogoPreview]               = useState("");
+  const [logoAtual, setLogoAtual]                   = useState<string | null>(null);
+  const [erroLogo, setErroLogo]                     = useState("");
 
   const nomeRef = useRef<HTMLInputElement>(null);
+  const logoRef = useRef<HTMLInputElement>(null);
+
+  const VALID_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!VALID_TYPES.includes(file.type)) { setErroLogo("Formato inválido. Use JPG, PNG ou WEBP."); return; }
+    if (file.size > 5 * 1024 * 1024)     { setErroLogo("A imagem deve ter no máximo 5 MB."); return; }
+    setErroLogo("");
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  }
 
   useEffect(() => {
     try {
@@ -90,6 +108,7 @@ export default function EntidadesPage() {
     setNome(""); setDescricao(""); setCnpj("");
     setTelefoneEntidade(""); setEmailEntidade("");
     setNomePessoaResp(""); setTelefonePessoaResp(""); setEmailPessoaResp("");
+    setLogoFile(null); setLogoPreview(""); setLogoAtual(null); setErroLogo("");
     setErro("");
   }
 
@@ -99,7 +118,9 @@ export default function EntidadesPage() {
     setNome(e.nome); setDescricao(e.descricao); setCnpj(e.cnpj);
     setTelefoneEntidade(e.telefoneEntidade); setEmailEntidade(e.emailEntidade);
     setNomePessoaResp(e.nomePessoaResp); setTelefonePessoaResp(e.telefonePessoaResp);
-    setEmailPessoaResp(e.emailPessoaResp); setErro("");
+    setEmailPessoaResp(e.emailPessoaResp);
+    setLogoFile(null); setLogoPreview(""); setLogoAtual(e.logo ?? null); setErroLogo("");
+    setErro("");
     setModal({ tipo: "editar", entidade: e });
   }
 
@@ -111,6 +132,16 @@ export default function EntidadesPage() {
     setSalvando(true); setErro("");
 
     try {
+      let logoUrl: string | undefined;
+      if (logoFile) {
+        const fd = new FormData();
+        fd.append("file", logoFile);
+        const upRes  = await fetch("/api/upload-foto", { method: "POST", body: fd });
+        const upData = await upRes.json();
+        if (!upRes.ok) { setErro(upData.error ?? "Erro ao enviar o logotipo."); setSalvando(false); return; }
+        logoUrl = upData.url;
+      }
+
       const isEditar = modal?.tipo === "editar";
       const url    = isEditar
         ? `/api/entidades/${(modal as { tipo: "editar"; entidade: Entidade }).entidade.id}`
@@ -121,7 +152,8 @@ export default function EntidadesPage() {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nome, descricao, cnpj, telefoneEntidade, emailEntidade,
-                               nomePessoaResp, telefonePessoaResp, emailPessoaResp }),
+                               nomePessoaResp, telefonePessoaResp, emailPessoaResp,
+                               ...(logoUrl ? { logoUrl } : {}) }),
       });
       const data = await res.json();
       if (!res.ok) { setErro(data.error ?? "Erro ao salvar."); return; }
@@ -337,6 +369,34 @@ export default function EntidadesPage() {
 
             <p className="mb-3 text-[12px] font-semibold uppercase tracking-wide text-[#64748b]">Dados da Entidade</p>
             <div className="space-y-4">
+              {/* Logotipo */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Logotipo</label>
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={() => logoRef.current?.click()}
+                    className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-[#bfdbfe] bg-[#f8faff] transition-colors hover:border-[#1a44a6]">
+                    {(logoPreview || logoAtual) ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={logoPreview || logoAtual!} alt="logo" className="h-full w-full object-contain" />
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" />
+                      </svg>
+                    )}
+                  </button>
+                  <div>
+                    <button type="button" onClick={() => logoRef.current?.click()}
+                      className="rounded-lg border border-[#bfdbfe] bg-white px-3 py-1.5 text-[13px] font-medium text-[#1a44a6] hover:bg-[#eff6ff] [border-width:0.5px]">
+                      {(logoPreview || logoAtual) ? "Trocar" : "Selecionar"}
+                    </button>
+                    <p className="mt-0.5 text-[11px] text-[#94a3b8]">JPG, PNG ou WEBP • 5 MB</p>
+                    {erroLogo && <p className="text-[11px] text-red-500">{erroLogo}</p>}
+                  </div>
+                </div>
+                <input ref={logoRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="hidden" onChange={handleLogoChange} />
+              </div>
+
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Nome <span className="text-[#dc2626]">*</span></label>
                 <input ref={nomeRef} type="text" value={nome} onChange={(e) => setNome(e.target.value)}

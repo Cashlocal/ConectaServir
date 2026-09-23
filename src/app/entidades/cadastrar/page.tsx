@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 const inputClass =
   "w-full rounded-xl border border-[#bfdbfe] bg-[#f8faff] px-4 py-3 text-[15px] text-[#0f172a] placeholder-[#94a3b8] outline-none transition-all [border-width:0.5px] focus:border-[#1a44a6] focus:bg-white focus:ring-2 focus:ring-[#1a44a6]/15";
+
+const VALID_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
 export default function CadastrarEntidadePage() {
   const [sucesso, setSucesso] = useState(false);
@@ -20,12 +22,44 @@ export default function CadastrarEntidadePage() {
   const [telefonePessoaResp, setTelefonePessoaResp] = useState("");
   const [emailPessoaResp, setEmailPessoaResp] = useState("");
 
+  const [logoFile, setLogoFile]       = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState("");
+  const [erroLogo, setErroLogo]       = useState("");
+  const logoRef = useRef<HTMLInputElement>(null);
+
+  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!VALID_TYPES.includes(file.type)) {
+      setErroLogo("Formato inválido. Use JPG, PNG ou WEBP.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErroLogo("A imagem deve ter no máximo 5 MB.");
+      return;
+    }
+    setErroLogo("");
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!nome.trim()) { setErro("O campo Nome da Entidade é obrigatório."); return; }
     setErro("");
     setSalvando(true);
     try {
+      let logoUrl: string | undefined;
+
+      if (logoFile) {
+        const fd = new FormData();
+        fd.append("file", logoFile);
+        const upRes  = await fetch("/api/upload-foto", { method: "POST", body: fd });
+        const upData = await upRes.json();
+        if (!upRes.ok) { setErro(upData.error ?? "Erro ao enviar o logotipo."); setSalvando(false); return; }
+        logoUrl = upData.url;
+      }
+
       const res = await fetch("/api/entidades", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -33,6 +67,7 @@ export default function CadastrarEntidadePage() {
           nome, descricao, cnpj,
           telefoneEntidade, emailEntidade,
           nomePessoaResp, telefonePessoaResp, emailPessoaResp,
+          logoUrl,
         }),
       });
       const data = await res.json();
@@ -99,6 +134,34 @@ export default function CadastrarEntidadePage() {
           <div className="rounded-2xl border border-[#bfdbfe] bg-white p-6 shadow-[0_2px_12px_rgba(29,78,216,0.06)] [border-width:0.5px]">
             <h2 className="mb-5 text-[17px] font-bold text-[#1e3a8a]">Dados da Entidade</h2>
             <div className="space-y-4">
+              {/* Logotipo */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Logotipo</label>
+                <div className="flex items-center gap-4">
+                  <button type="button" onClick={() => logoRef.current?.click()}
+                    className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-[#bfdbfe] bg-[#f8faff] transition-colors hover:border-[#1a44a6] hover:bg-[#eff6ff]">
+                    {logoPreview ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={logoPreview} alt="preview" className="h-full w-full object-contain" />
+                    ) : (
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" /><circle cx="12" cy="13" r="4" />
+                      </svg>
+                    )}
+                  </button>
+                  <div className="min-w-0">
+                    <button type="button" onClick={() => logoRef.current?.click()}
+                      className="rounded-lg border border-[#bfdbfe] bg-white px-3 py-1.5 text-[13px] font-medium text-[#1a44a6] transition-colors hover:bg-[#eff6ff] [border-width:0.5px]">
+                      {logoPreview ? "Trocar imagem" : "Selecionar imagem"}
+                    </button>
+                    <p className="mt-1 text-[11px] text-[#94a3b8]">JPG, PNG ou WEBP • máx. 5 MB</p>
+                    {erroLogo && <p className="mt-1 text-[12px] text-red-500">{erroLogo}</p>}
+                  </div>
+                </div>
+                <input ref={logoRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="hidden" onChange={handleLogoChange} />
+              </div>
+
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">
                   Nome da Entidade <span className="text-[#dc2626]">*</span>

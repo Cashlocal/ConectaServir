@@ -148,10 +148,20 @@ export function Navbar() {
                   aria-expanded={dropdownOpen}
                 >
                   {usuario.foto ? (
-                    <Image src={usuario.foto} alt={usuario.nome} width={40} height={40} className="h-10 w-10 object-cover" unoptimized />
-                  ) : (
-                    inicial
-                  )}
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={usuario.foto} alt={usuario.nome}
+                      className="h-10 w-10 object-cover"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.display = "none";
+                        (e.currentTarget.nextElementSibling as HTMLElement | null)?.style.setProperty("display", "flex");
+                      }} />
+                  ) : null}
+                  <span
+                    className="flex h-10 w-10 items-center justify-center bg-[#1d4ed8] text-[15px] font-bold text-white"
+                    style={{ display: usuario.foto ? "none" : "flex" }}
+                  >
+                    {inicial}
+                  </span>
                 </button>
 
                 {dropdownOpen && (

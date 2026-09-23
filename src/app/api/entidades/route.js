@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 const TABLE = process.env.AIRTABLE_TABLE_ENTIDADES ?? "tblPIOP4H76gOOPSe";
 
 function mapRecord(r) {
+  const logoArr = r.fields["Logo"];
   return {
     id:                 r.id,
     nome:               r.fields["Nome"]                    ?? "",
@@ -14,6 +15,7 @@ function mapRecord(r) {
     telefonePessoaResp: r.fields["Telefone Pessoa Responsavel"] ?? "",
     emailPessoaResp:    r.fields["Email Pessoa Responsavel"]    ?? "",
     status:             r.fields["Status"]                  ?? "Pendente",
+    logo:               Array.isArray(logoArr) ? (logoArr[0]?.url ?? null) : null,
   };
 }
 
@@ -44,28 +46,29 @@ export async function POST(req) {
 
   try {
     const { nome, descricao, cnpj, telefoneEntidade, emailEntidade,
-            nomePessoaResp, telefonePessoaResp, emailPessoaResp } = await req.json();
+            nomePessoaResp, telefonePessoaResp, emailPessoaResp, logoUrl } = await req.json();
 
     if (!nome?.trim()) {
       return NextResponse.json({ error: "O campo Nome é obrigatório." }, { status: 400 });
     }
 
+    const fields = {
+      Nome:                          nome.trim(),
+      Descricao:                     (descricao          ?? "").trim(),
+      CNPJ:                          (cnpj               ?? "").trim(),
+      "Telefone Entidade":           (telefoneEntidade   ?? "").trim(),
+      "Email Entidade":              (emailEntidade      ?? "").trim(),
+      "Nome Pessoa Responsavel":     (nomePessoaResp     ?? "").trim(),
+      "Telefone Pessoa Responsavel": (telefonePessoaResp ?? "").trim(),
+      "Email Pessoa Responsavel":    (emailPessoaResp    ?? "").trim(),
+      Status:                        "Pendente",
+    };
+    if (logoUrl) fields["Logo"] = [{ url: logoUrl }];
+
     const res = await fetch(`https://api.airtable.com/v0/${baseId}/${TABLE}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        fields: {
-          Nome:                        nome.trim(),
-          Descricao:                   (descricao          ?? "").trim(),
-          CNPJ:                        (cnpj               ?? "").trim(),
-          "Telefone Entidade":         (telefoneEntidade   ?? "").trim(),
-          "Email Entidade":            (emailEntidade      ?? "").trim(),
-          "Nome Pessoa Responsavel":   (nomePessoaResp     ?? "").trim(),
-          "Telefone Pessoa Responsavel": (telefonePessoaResp ?? "").trim(),
-          "Email Pessoa Responsavel":  (emailPessoaResp    ?? "").trim(),
-          Status:                      "Pendente",
-        },
-      }),
+      body: JSON.stringify({ fields }),
     });
 
     const data = await res.json();

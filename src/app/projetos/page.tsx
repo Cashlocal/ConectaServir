@@ -14,6 +14,7 @@ type Projeto = {
   telefone: string;
   entidadeId: string;
   entidade: string;
+  entidadeLogo?: string | null;
 };
 
 type VolEncontrado = { id: string; nome: string; email: string; telefone: string };
@@ -236,9 +237,15 @@ export default function ProjetosPage() {
                 <div className="mt-auto space-y-1.5 pt-2 text-[12px] text-[#64748b]">
                   {p.entidade && (
                     <div className="flex items-center gap-1.5">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
-                      </svg>
+                      {p.entidadeLogo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.entidadeLogo} alt={p.entidade}
+                          className="h-4 w-4 shrink-0 rounded object-contain" />
+                      ) : (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
+                        </svg>
+                      )}
                       <span className="font-medium text-[#1e3a8a]">{p.entidade}</span>
                     </div>
                   )}
