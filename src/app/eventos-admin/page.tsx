@@ -58,12 +58,16 @@ export default function EventosAdminPage() {
   const [descricao, setDescricao] = useState("");
   const [dataLocal, setDataLocal] = useState("");
   const [bannerUrl, setBannerUrl] = useState("");
+  const [bannerFile, setBannerFile]     = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState("");
+  const [erroBanner, setErroBanner]     = useState("");
   const [entidadeId, setEntidadeId]   = useState("");
   const [entidades, setEntidades]     = useState<{ id: string; nome: string }[]>([]);
   const [usuarioTipo, setUsuarioTipo]           = useState("");
   const [usuarioEntidadeId, setUsuarioEntidadeId] = useState("");
 
-  const nomeRef = useRef<HTMLInputElement>(null);
+  const nomeRef    = useRef<HTMLInputElement>(null);
+  const bannerRef  = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     try {
@@ -138,6 +142,7 @@ export default function EventosAdminPage() {
     setDescricao(ev.descricao);
     setDataLocal(isoParaDatetimeLocal(ev.data));
     setBannerUrl(ev.banner ?? "");
+    setBannerFile(null); setBannerPreview(""); setErroBanner("");
     setEntidadeId((ev as unknown as { entidadeId?: string }).entidadeId ?? "");
     setErro("");
     setModal({ tipo: "editar", evento: ev });
@@ -148,13 +153,42 @@ export default function EventosAdminPage() {
     setModal({ tipo: "excluir", evento: ev });
   }
 
-  function fechar() { setModal(null); setErro(""); setBannerUrl(""); }
+  function fechar() {
+    setModal(null); setErro(""); setBannerUrl("");
+    setBannerFile(null); setBannerPreview(""); setErroBanner("");
+  }
+
+  const VALID_BANNER = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  function handleBannerChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!VALID_BANNER.includes(file.type)) {
+      setErroBanner("Formato inválido. Use JPG, PNG ou WEBP."); return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErroBanner("A imagem deve ter no máximo 5 MB."); return;
+    }
+    setErroBanner("");
+    setBannerFile(file);
+    setBannerPreview(URL.createObjectURL(file));
+  }
 
   async function salvar() {
     if (!nome.trim()) { setErro("O campo Nome Evento é obrigatório."); return; }
     setSalvando(true); setErro("");
 
     try {
+      // Upload do banner se foi selecionado um arquivo
+      let finalBannerUrl = bannerUrl;
+      if (bannerFile) {
+        const fd = new FormData();
+        fd.append("file", bannerFile);
+        const upRes  = await fetch("/api/upload-foto", { method: "POST", body: fd });
+        const upData = await upRes.json();
+        if (!upRes.ok) { setErro(upData.error ?? "Erro ao enviar o banner."); setSalvando(false); return; }
+        finalBannerUrl = upData.url;
+      }
+
       const isEditar = modal?.tipo === "editar";
       const eventoId = isEditar ? (modal as { tipo: "editar"; evento: Evento }).evento.id : null;
       const url = isEditar ? `/api/eventos/${eventoId}` : "/api/eventos";
@@ -162,7 +196,7 @@ export default function EventosAdminPage() {
 
       const body: Record<string, string> = { nome: nome.trim(), descricao: descricao.trim() };
       if (dataLocal) body.data = datetimeLocalParaIso(dataLocal);
-      if (bannerUrl.trim()) body.bannerUrl = bannerUrl.trim();
+      if (finalBannerUrl.trim()) body.bannerUrl = finalBannerUrl.trim();
       else if (isEditar) body.bannerUrl = "";
       if (entidadeId) body.entidadeId = entidadeId;
 
@@ -390,18 +424,64 @@ export default function EventosAdminPage() {
                 />
               </div>
 
+              {/* Upload de banner */}
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">URL do Banner (imagem)</label>
+                <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Banner do evento</label>
                 <input
-                  type="url"
-                  value={bannerUrl}
-                  onChange={(e) => setBannerUrl(e.target.value)}
-                  placeholder="https://exemplo.com/imagem.jpg"
-                  className={inputClass}
+                  ref={bannerRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="hidden"
+                  onChange={handleBannerChange}
                 />
-                {bannerUrl && bannerUrl.startsWith("http") && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={bannerUrl} alt="Preview" className="mt-2 h-24 w-full rounded-xl object-cover" />
+                {/* Preview ou placeholder */}
+                {bannerPreview || bannerUrl ? (
+                  <div className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={bannerPreview || bannerUrl}
+                      alt="Banner"
+                      className="h-36 w-full rounded-xl object-cover ring-2 ring-[#bfdbfe]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setBannerFile(null); setBannerPreview(""); setBannerUrl(""); }}
+                      className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
+                      title="Remover banner"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => bannerRef.current?.click()}
+                      className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-[#bfdbfe] py-2 text-[13px] font-medium text-[#1d4ed8] hover:bg-[#eff6ff] [border-width:0.5px]"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+                        <circle cx="12" cy="13" r="4" />
+                      </svg>
+                      Trocar imagem
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => bannerRef.current?.click()}
+                    className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#bfdbfe] bg-[#f8faff] py-8 transition-colors hover:border-[#1d4ed8] hover:bg-[#eff6ff]"
+                  >
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <polyline points="21 15 16 10 5 21" />
+                    </svg>
+                    <span className="text-[13px] font-medium text-[#1d4ed8]">Clique para selecionar a imagem</span>
+                    <span className="text-[11px] text-[#94a3b8]">JPG, PNG ou WEBP · máx. 5 MB</span>
+                  </button>
+                )}
+                {erroBanner && (
+                  <p className="mt-1.5 text-[12px] text-[#dc2626]">{erroBanner}</p>
                 )}
               </div>
 
