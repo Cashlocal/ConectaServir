@@ -77,20 +77,22 @@ export async function POST(req) {
     const tipo        = String(record.fields["Tipo"] ?? "").trim();
     const cnpjEntidade = String(record.fields["CNPJ Entidade"] ?? "").trim();
 
-    // Para usuários do tipo Entidade, resolve o entidadeId (record ID da Entidade)
-    let entidadeId = "";
+    // Para usuários do tipo Entidade, resolve o entidadeId e nomeEntidade
+    let entidadeId   = "";
+    let nomeEntidade = "";
     if (tipo === "Entidade" && cnpjEntidade) {
       try {
-        const tableEnt = process.env.AIRTABLE_TABLE_ENTIDADES ?? "tblPIOP4H76gOOPSe";
+        const tableEnt   = process.env.AIRTABLE_TABLE_ENTIDADES ?? "tblPIOP4H76gOOPSe";
         const cnpjDigits = cnpjEntidade.replace(/\D/g, "");
-        const formula = encodeURIComponent(`FIND("${cnpjDigits}",SUBSTITUTE({CNPJ}," ",""))>0`);
-        const entRes = await fetch(
+        const formula    = encodeURIComponent(`FIND("${cnpjDigits}",SUBSTITUTE({CNPJ}," ",""))>0`);
+        const entRes     = await fetch(
           `https://api.airtable.com/v0/${baseId}/${tableEnt}?filterByFormula=${formula}&maxRecords=1`,
           { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" }
         );
         if (entRes.ok) {
           const entData = await entRes.json();
-          entidadeId = entData.records?.[0]?.id ?? "";
+          entidadeId   = entData.records?.[0]?.id                    ?? "";
+          nomeEntidade = entData.records?.[0]?.fields?.["Nome"]      ?? "";
         }
       } catch {}
     }
@@ -105,6 +107,7 @@ export async function POST(req) {
         tipo,
         cnpjEntidade,
         entidadeId,
+        nomeEntidade,
       },
     });
   } catch {

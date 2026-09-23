@@ -430,19 +430,21 @@ export default function DemandasPage() {
                 />
               </div>
 
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Instituição</label>
-                <select
-                  value={entidadeId}
-                  onChange={(e) => setEntidadeId(e.target.value)}
-                  className={inputClass}
-                >
-                  <option value="">Selecione uma instituição...</option>
-                  {entidades.map((e) => (
-                    <option key={e.id} value={e.id}>{e.nome}</option>
-                  ))}
-                </select>
-              </div>
+              {usuarioTipo !== "Entidade" && (
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Instituição</label>
+                  <select
+                    value={entidadeId}
+                    onChange={(e) => setEntidadeId(e.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="">Selecione uma instituição...</option>
+                    {entidades.map((e) => (
+                      <option key={e.id} value={e.id}>{e.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {erro && (
                 <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 [border-width:0.5px]">

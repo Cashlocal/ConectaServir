@@ -355,13 +355,15 @@ export default function ProjetosAdminPage() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Entidade</label>
-                  <select value={form.entidadeId} onChange={(e) => set("entidadeId", e.target.value)} className={inputClass}>
-                    <option value="">Nenhuma</option>
-                    {entidades.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
-                  </select>
-                </div>
+                {usuarioTipo !== "Entidade" && (
+                  <div>
+                    <label className="mb-1.5 block text-sm font-medium text-[#1e3a8a]">Entidade</label>
+                    <select value={form.entidadeId} onChange={(e) => set("entidadeId", e.target.value)} className={inputClass}>
+                      <option value="">Nenhuma</option>
+                      {entidades.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">

@@ -51,8 +51,9 @@ export default function VoluntariosAdminPage() {
 
   const nomeRef = useRef<HTMLInputElement>(null);
 
-  const [usuarioTipo, setUsuarioTipo]           = useState("");
-  const [usuarioCnpj, setUsuarioCnpj]           = useState("");
+  const [usuarioTipo, setUsuarioTipo]               = useState("");
+  const [usuarioCnpj, setUsuarioCnpj]               = useState("");
+  const [usuarioNomeEntidade, setUsuarioNomeEntidade] = useState("");
 
   useEffect(() => {
     try {
@@ -61,6 +62,7 @@ export default function VoluntariosAdminPage() {
       const u = JSON.parse(raw);
       setUsuarioTipo(u.tipo ?? "");
       setUsuarioCnpj(u.cnpjEntidade ?? "");
+      setUsuarioNomeEntidade(u.nomeEntidade ?? "");
     } catch {
       router.replace("/login"); return;
     }
@@ -132,10 +134,16 @@ export default function VoluntariosAdminPage() {
         : "/api/voluntarios-admin";
       const method = isEditar ? "PATCH" : "POST";
 
+      const body: Record<string, string> = { nome, email, telefone };
+      if (!isEditar && usuarioTipo === "Entidade") {
+        if (usuarioNomeEntidade) body.nomeEntidade = usuarioNomeEntidade;
+        if (usuarioCnpj)         body.cnpjEntidade = usuarioCnpj;
+      }
+
       const res  = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome, email, telefone }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
 

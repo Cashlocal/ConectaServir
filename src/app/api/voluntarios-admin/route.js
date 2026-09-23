@@ -70,24 +70,26 @@ export async function POST(req) {
   }
 
   try {
-    const { nome, email, telefone } = await req.json();
+    const { nome, email, telefone, nomeEntidade, cnpjEntidade } = await req.json();
     if (!nome?.trim() || !email?.trim()) {
       return NextResponse.json({ error: "Nome e email são obrigatórios." }, { status: 400 });
     }
+
+    const fields = {
+      "Nome Completo": nome.trim(),
+      "Email":         email.trim(),
+      "Telefone":      (telefone ?? "").trim(),
+      "Status":        "Ativo",
+    };
+    if (nomeEntidade) fields["Nome Entidade"] = nomeEntidade.trim();
+    if (cnpjEntidade) fields["CNPJ Entidade"] = cnpjEntidade.trim();
 
     const res = await fetch(
       `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}`,
       {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fields: {
-            "Nome Completo": nome.trim(),
-            "Email":         email.trim(),
-            "Telefone":      (telefone ?? "").trim(),
-            "Status":        "Ativo",
-          },
-        }),
+        body: JSON.stringify({ fields }),
       }
     );
 
