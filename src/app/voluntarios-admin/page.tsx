@@ -51,10 +51,16 @@ export default function VoluntariosAdminPage() {
 
   const nomeRef = useRef<HTMLInputElement>(null);
 
+  const [usuarioTipo, setUsuarioTipo]           = useState("");
+  const [usuarioCnpj, setUsuarioCnpj]           = useState("");
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem("usuario");
       if (!raw) { router.replace("/login"); return; }
+      const u = JSON.parse(raw);
+      setUsuarioTipo(u.tipo ?? "");
+      setUsuarioCnpj(u.cnpjEntidade ?? "");
     } catch {
       router.replace("/login"); return;
     }
@@ -67,7 +73,14 @@ export default function VoluntariosAdminPage() {
   async function carregarVoluntarios() {
     setCarregando(true);
     try {
-      const res  = await fetch("/api/voluntarios-admin");
+      const raw  = localStorage.getItem("usuario");
+      const u    = raw ? JSON.parse(raw) : {};
+      const cnpj = u.cnpjEntidade ?? "";
+      const tipo = u.tipo ?? "";
+      const url  = tipo === "Entidade" && cnpj
+        ? `/api/voluntarios-admin?cnpjEntidade=${encodeURIComponent(cnpj)}`
+        : "/api/voluntarios-admin";
+      const res  = await fetch(url);
       const data = await res.json();
       setVoluntarios(Array.isArray(data) ? data : []);
     } catch {

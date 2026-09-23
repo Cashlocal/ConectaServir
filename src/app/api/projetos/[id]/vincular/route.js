@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 
+const TABLE_ENTIDADES = process.env.AIRTABLE_TABLE_ENTIDADES ?? "tblPIOP4H76gOOPSe";
+
 export async function POST(req, { params }) {
   const { id }      = await params;
   const apiKey      = process.env.AIRTABLE_API_KEY;
   const baseId      = process.env.AIRTABLE_BASE_ID;
   const tabProj     = process.env.AIRTABLE_TABLE_PROJETOS;
   const tabCert     = process.env.AIRTABLE_TABLE_CERTIFICADOS;
+  const tabVol      = process.env.AIRTABLE_TABLE_VOLUNTARIOS;
 
   if (!apiKey || !baseId || !tabProj) {
     return NextResponse.json({ error: "Configuração incompleta." }, { status: 503 });
@@ -45,11 +48,44 @@ export async function POST(req, { params }) {
       }
     }
 
+    // Resolve nome e CNPJ da entidade do projeto para vincular ao voluntário
+    const entidadeIds = projeto.fields["Entidade"];
+    const entidadeId  = Array.isArray(entidadeIds) && entidadeIds.length > 0 ? entidadeIds[0] : null;
+
+    if (entidadeId && tabVol) {
+      try {
+        const entRes = await fetch(
+          `https://api.airtable.com/v0/${baseId}/${TABLE_ENTIDADES}/${entidadeId}`,
+          { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" }
+        );
+        if (entRes.ok) {
+          const entData  = await entRes.json();
+          const entNome  = entData.fields?.["Nome"] ?? "";
+          const entCnpj  = entData.fields?.["CNPJ"] ?? "";
+          // Grava vínculo de entidade no voluntário (campos texto no Airtable)
+          await fetch(
+            `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tabVol)}/${voluntarioId}`,
+            {
+              method:  "PATCH",
+              headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+              body:    JSON.stringify({
+                fields: {
+                  "Nome Entidade": entNome,
+                  "CNPJ Entidade": entCnpj,
+                },
+              }),
+            }
+          );
+        }
+      } catch {
+        // Falha silenciosa: o vínculo com o projeto já foi salvo
+      }
+    }
+
     // Cria certificado automático com status Pendente
     if (tabCert) {
       try {
         const nomeProjeto = projeto.fields["Nome do Projeto"] ?? "Projeto";
-        const entidadeIds = projeto.fields["Entidade"];
 
         const certFields = {
           "Voluntario": [voluntarioId],
@@ -57,11 +93,11 @@ export async function POST(req, { params }) {
           "Qtde Horas": 0,
           "Status":     "Pendente",
         };
-        if (Array.isArray(entidadeIds) && entidadeIds.length > 0) {
-          certFields["Entidade"] = entidadeIds;
+        if (entidadeId) {
+          certFields["Entidade"] = [entidadeId];
         }
 
-        const certRes = await fetch(
+        await fetch(
           `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tabCert)}`,
           {
             method:  "POST",
@@ -69,11 +105,6 @@ export async function POST(req, { params }) {
             body:    JSON.stringify({ fields: certFields }),
           }
         );
-
-        if (certRes.ok) {
-          // Apenas registra o certificado pendente — o PDF será gerado ao emitir
-          // (quando as horas forem informadas)
-        }
       } catch {
         // Falha silenciosa: o vínculo com o projeto já foi salvo
       }

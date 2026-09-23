@@ -11,14 +11,14 @@ const CONECTASERVIR_LOGO =
 const ROTARY_LOGO =
   "https://files.manuscdn.com/user_upload_by_module/session_file/310419663031850996/dKVDgjXQNCKLeoRo.png";
 
-const links = [
-  { href: "/", label: "Início" },
-  { href: "/projetos", label: "Projetos" },
-  { href: "/eventos", label: "Eventos" },
-  { href: "/voluntarios", label: "Voluntários" },
-  { href: "/consultar-demandas", label: "Demandas" },
-  { href: "/entidades/cadastrar", label: "Entidades" },
-];
+const ALL_LINKS = [
+  { href: "/",                  label: "Início",      somente: "todos" },
+  { href: "/projetos",          label: "Projetos",    somente: "todos" },
+  { href: "/eventos",           label: "Eventos",     somente: "publico" },
+  { href: "/voluntarios",       label: "Voluntários", somente: "todos" },
+  { href: "/consultar-demandas",label: "Demandas",    somente: "todos" },
+  { href: "/entidades/cadastrar",label: "Entidades",  somente: "publico" },
+] as const;
 
 type Usuario = {
   id: string;
@@ -86,6 +86,11 @@ export function Navbar() {
   const inicial = usuario?.nome?.charAt(0).toUpperCase() ?? "?";
   const isEntidade = usuario?.tipo === "Entidade";
 
+  // Links da barra pública — Entidade só vê Início, Projetos, Voluntários, Demandas
+  const links = ALL_LINKS.filter((l) =>
+    l.somente === "todos" || (!isEntidade && l.somente === "publico")
+  );
+
   // Menu do dropdown conforme tipo de usuário
   const menuLogado = isEntidade
     ? [
@@ -93,6 +98,8 @@ export function Navbar() {
         { href: "/voluntarios-admin", label: "Voluntários" },
         { href: "/demandas",          label: "Demandas" },
         { href: "/certificados",      label: "Lançar Certificado" },
+        { href: "/eventos-admin",     label: "Eventos" },
+        { href: "/entidades",         label: "Entidades" },
       ]
     : [
         { href: "/certificados",      label: "Lançar Certificado" },

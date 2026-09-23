@@ -19,16 +19,22 @@ function mapRecord(r) {
   };
 }
 
-export async function GET() {
+export async function GET(req) {
   const apiKey = process.env.AIRTABLE_API_KEY;
   const baseId = process.env.AIRTABLE_BASE_ID;
   if (!apiKey || !baseId) return NextResponse.json([]);
 
   try {
-    const res = await fetch(
-      `https://api.airtable.com/v0/${baseId}/${TABLE}?sort[0][field]=Nome&sort[0][direction]=asc`,
-      { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" }
-    );
+    const { searchParams } = new URL(req.url);
+    const cnpjEntidade = searchParams.get("cnpjEntidade") ?? "";
+
+    let url = `https://api.airtable.com/v0/${baseId}/${TABLE}?sort[0][field]=Nome&sort[0][direction]=asc`;
+    if (cnpjEntidade) {
+      const digits = cnpjEntidade.replace(/\D/g, "");
+      url += `&filterByFormula=${encodeURIComponent(`FIND("${digits}",SUBSTITUTE({CNPJ},"-",""))>0`)}`;
+    }
+
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store" });
     if (!res.ok) return NextResponse.json([]);
     const data = await res.json();
     return NextResponse.json((data.records ?? []).map(mapRecord));

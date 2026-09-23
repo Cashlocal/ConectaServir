@@ -79,10 +79,16 @@ export default function EntidadesPage() {
     setLogoPreview(URL.createObjectURL(file));
   }
 
+  const [usuarioTipo, setUsuarioTipo] = useState("");
+  const [usuarioCnpj, setUsuarioCnpj] = useState("");
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem("usuario");
       if (!raw) { router.replace("/login"); return; }
+      const u = JSON.parse(raw);
+      setUsuarioTipo(u.tipo ?? "");
+      setUsuarioCnpj(u.cnpjEntidade ?? "");
     } catch {
       router.replace("/login"); return;
     }
@@ -95,7 +101,14 @@ export default function EntidadesPage() {
   async function carregarEntidades() {
     setCarregando(true);
     try {
-      const res  = await fetch("/api/entidades");
+      const raw  = localStorage.getItem("usuario");
+      const u    = raw ? JSON.parse(raw) : {};
+      const cnpj = u.cnpjEntidade ?? "";
+      const tipo = u.tipo ?? "";
+      const url  = tipo === "Entidade" && cnpj
+        ? `/api/entidades?cnpjEntidade=${encodeURIComponent(cnpj)}`
+        : "/api/entidades";
+      const res  = await fetch(url);
       const data = await res.json();
       setEntidades(Array.isArray(data) ? data : []);
     } catch {
@@ -234,13 +247,15 @@ export default function EntidadesPage() {
           </h1>
           <p className="mt-1 text-base text-[#475569]">Gerencie as entidades parceiras do Rotary</p>
         </div>
-        <button type="button" onClick={abrirNovo}
-          className="inline-flex items-center gap-2 self-start rounded-xl bg-[#1d4ed8] px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#1e40af] sm:self-auto">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Nova Entidade
-        </button>
+        {usuarioTipo !== "Entidade" && (
+          <button type="button" onClick={abrirNovo}
+            className="inline-flex items-center gap-2 self-start rounded-xl bg-[#1d4ed8] px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#1e40af] sm:self-auto">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Nova Entidade
+          </button>
+        )}
       </div>
 
       {/* Busca */}
@@ -348,7 +363,7 @@ export default function EntidadesPage() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="inline-flex items-center gap-1.5">
-                          {ent.status === "Pendente" && (
+                          {usuarioTipo !== "Entidade" && ent.status === "Pendente" && (
                             <button type="button"
                               onClick={() => aprovar(ent)}
                               disabled={aprovando === ent.id}
@@ -375,6 +390,7 @@ export default function EntidadesPage() {
                               <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
                             </svg>
                           </button>
+                          {usuarioTipo !== "Entidade" && (
                           <button type="button" onClick={() => abrirExcluir(ent)}
                             className="rounded-lg p-1.5 text-[#64748b] transition-colors hover:bg-[#fef2f2] hover:text-[#dc2626]"
                             aria-label={`Excluir ${ent.nome}`} title="Excluir">
@@ -383,6 +399,7 @@ export default function EntidadesPage() {
                               <path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" />
                             </svg>
                           </button>
+                          )}
                         </div>
                       </td>
                     </tr>

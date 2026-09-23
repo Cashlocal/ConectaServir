@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req) {
   const apiKey = process.env.AIRTABLE_API_KEY;
   const baseId = process.env.AIRTABLE_BASE_ID;
   const table  = process.env.AIRTABLE_TABLE_VOLUNTARIOS;
@@ -8,6 +8,9 @@ export async function GET() {
   if (!apiKey || !baseId || !table) return NextResponse.json([]);
 
   try {
+    const { searchParams } = new URL(req.url);
+    const cnpjEntidade = searchParams.get("cnpjEntidade") ?? "";
+
     const params = new URLSearchParams();
     params.append("fields[]", "Nome Completo");
     params.append("fields[]", "Email");
@@ -20,6 +23,13 @@ export async function GET() {
     params.append("fields[]", "Áreas de Interesse");
     params.append("sort[0][field]", "Nome Completo");
     params.append("sort[0][direction]", "asc");
+    if (cnpjEntidade) {
+      const digits = cnpjEntidade.replace(/\D/g, "");
+      params.append(
+        "filterByFormula",
+        `FIND("${digits}",SUBSTITUTE({CNPJ Entidade},"-",""))>0`
+      );
+    }
 
     const res = await fetch(
       `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(table)}?${params}`,
