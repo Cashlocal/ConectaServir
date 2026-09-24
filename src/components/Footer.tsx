@@ -42,7 +42,7 @@ export function Footer() {
               </Link>
             </li>
             <li>
-              <Link href="#" className={linkClass}>
+              <Link href="/contato" className={linkClass}>
                 Contato
               </Link>
             </li>

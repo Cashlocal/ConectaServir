@@ -12,12 +12,13 @@ const ROTARY_LOGO =
   "https://files.manuscdn.com/user_upload_by_module/session_file/310419663031850996/dKVDgjXQNCKLeoRo.png";
 
 const ALL_LINKS = [
-  { href: "/",                  label: "Início",      somente: "todos" },
-  { href: "/projetos",          label: "Projetos",    somente: "todos" },
-  { href: "/eventos",           label: "Eventos",     somente: "publico" },
-  { href: "/voluntarios",       label: "Voluntários", somente: "todos" },
-  { href: "/consultar-demandas",label: "Demandas",    somente: "todos" },
-  { href: "/entidades/cadastrar",label: "Entidades",  somente: "publico" },
+  { href: "/",                   label: "Início",      somente: "todos" },
+  { href: "/projetos",           label: "Projetos",    somente: "todos" },
+  { href: "/eventos",            label: "Eventos",     somente: "todos" },
+  { href: "/voluntarios",        label: "Voluntários", somente: "todos" },
+  { href: "/consultar-demandas", label: "Demandas",    somente: "todos" },
+  { href: "/entidades/cadastrar",label: "Entidades",   somente: "publico" },
+  { href: "/contato",            label: "Contato",     somente: "todos" },
 ] as const;
 
 type Usuario = {

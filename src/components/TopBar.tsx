@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "topbar-gratuito-dismissed";
@@ -36,12 +37,12 @@ export function TopBar() {
         <strong>Plataforma 100% gratuita</strong> para voluntários e entidades
         &nbsp;·&nbsp; uma iniciativa do Rotary Club de Pato Branco
       </span>
-      <a
-        href="/entidades/cadastrar"
+      <Link
+        href="/contato"
         className="ml-1 font-semibold underline underline-offset-2 hover:text-amber-300 transition-colors"
       >
-        Saiba mais
-      </a>
+        Entre em contato
+      </Link>
 
       <button
         type="button"
