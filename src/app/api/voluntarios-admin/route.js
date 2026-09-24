@@ -25,11 +25,13 @@ export async function GET(req) {
     params.append("sort[0][field]", "Nome Completo");
     params.append("sort[0][direction]", "asc");
 
+    // mapa voluntarioId → [nomes de projetos]
+    let volProjetosMap = {};
+
     if (cnpjEntidade && tableProj) {
-      // Estratégia: busca os projetos da entidade → coleta IDs dos voluntários vinculados
-      // (mais confiável do que um campo "CNPJ Entidade" no voluntário que pode não existir)
-      const digits   = cnpjEntidade.replace(/\D/g, "");
-      const projUrl  = new URL(
+      // Estratégia: busca os projetos da entidade → coleta IDs e nomes dos voluntários vinculados
+      const digits  = cnpjEntidade.replace(/\D/g, "");
+      const projUrl = new URL(
         `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableProj)}`
       );
       projUrl.searchParams.append(
@@ -37,6 +39,7 @@ export async function GET(req) {
         `FIND("${digits}",SUBSTITUTE(ARRAYJOIN({CNPJ Entidade},""),"-",""))>0`
       );
       projUrl.searchParams.append("fields[]", "Voluntários");
+      projUrl.searchParams.append("fields[]", "Nome do Projeto");
 
       const projRes = await fetch(projUrl.toString(), {
         headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store",
@@ -45,11 +48,20 @@ export async function GET(req) {
       if (!projRes.ok) return NextResponse.json([]);
 
       const projData = await projRes.json();
-      const volIds   = (projData.records ?? []).flatMap((p) =>
-        Array.isArray(p.fields["Voluntários"]) ? p.fields["Voluntários"] : []
-      );
-      const uniqueIds = [...new Set(volIds)];
 
+      // Monta mapa voluntarioId → lista de nomes de projetos
+      for (const p of (projData.records ?? [])) {
+        const nomeProjeto = p.fields["Nome do Projeto"] ?? "Projeto";
+        const vols = Array.isArray(p.fields["Voluntários"]) ? p.fields["Voluntários"] : [];
+        for (const vid of vols) {
+          if (!volProjetosMap[vid]) volProjetosMap[vid] = [];
+          if (!volProjetosMap[vid].includes(nomeProjeto)) {
+            volProjetosMap[vid].push(nomeProjeto);
+          }
+        }
+      }
+
+      const uniqueIds = Object.keys(volProjetosMap);
       if (uniqueIds.length === 0) return NextResponse.json([]);
 
       // Filtra voluntários por RECORD_ID() — sempre confiável
@@ -80,6 +92,7 @@ export async function GET(req) {
       areasInteresse:  Array.isArray(r.fields["Áreas de Interesse"])
                          ? r.fields["Áreas de Interesse"]
                          : [],
+      projetos:        volProjetosMap[r.id] ?? [],
     }));
 
     return NextResponse.json(voluntarios);

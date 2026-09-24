@@ -14,6 +14,7 @@ type Voluntario = {
   habilidades: string;
   disponibilidade: string;
   areasInteresse: string[];
+  projetos: string[];
 };
 
 type Certificado = {
@@ -355,6 +356,23 @@ export default function VoluntariosAdminPage() {
                       {expanded && (
                         <tr key={`${v.id}-detail`}>
                           <td colSpan={6} className="border-t border-[#e2e8f0] bg-[#f0f6ff] px-6 py-5">
+                            {/* Projetos vinculados (visível quando há dados) */}
+                            {v.projetos && v.projetos.length > 0 && (
+                              <div className="mb-4 rounded-xl border border-[#bfdbfe] bg-white px-4 py-3 [border-width:0.5px]">
+                                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[#64748b]">Projetos em que se voluntariou</p>
+                                <div className="flex flex-wrap gap-2">
+                                  {v.projetos.map((proj) => (
+                                    <span key={proj} className="inline-flex items-center gap-1.5 rounded-full bg-[#dbeafe] px-3 py-1 text-[12px] font-medium text-[#1e40af]">
+                                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                        <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
+                                      </svg>
+                                      {proj}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
                             <div className="grid gap-6 md:grid-cols-2">
                               {/* Dados do voluntário */}
                               <div>
