@@ -45,6 +45,7 @@ export default function EntidadesPage() {
   const [entidades, setEntidades]   = useState<Entidade[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [busca, setBusca]           = useState("");
+  const [filtroStatus, setFiltroStatus] = useState<"" | "Pendente" | "Aprovada">("");
   const [modal, setModal]           = useState<ModalState>(null);
   const [salvando, setSalvando]     = useState(false);
   const [erro, setErro]             = useState("");
@@ -226,15 +227,16 @@ export default function EntidadesPage() {
   if (!pronto) return null;
 
   const q = busca.toLowerCase();
-  const filtradas = q
-    ? entidades.filter(
-        (e) =>
-          e.nome.toLowerCase().includes(q) ||
-          e.descricao.toLowerCase().includes(q) ||
-          e.nomePessoaResp.toLowerCase().includes(q) ||
-          e.emailEntidade.toLowerCase().includes(q)
-      )
-    : entidades;
+  const filtradas = entidades.filter((e) => {
+    const matchBusca =
+      !q ||
+      e.nome.toLowerCase().includes(q) ||
+      e.descricao.toLowerCase().includes(q) ||
+      e.nomePessoaResp.toLowerCase().includes(q) ||
+      e.emailEntidade.toLowerCase().includes(q);
+    const matchStatus = !filtroStatus || e.status === filtroStatus;
+    return matchBusca && matchStatus;
+  });
 
   return (
     <main className="min-h-[calc(100vh-120px)] bg-[#eff6ff] px-6 py-12 md:px-16 md:py-[48px]">
@@ -258,23 +260,35 @@ export default function EntidadesPage() {
         )}
       </div>
 
-      {/* Busca */}
-      <div className="relative mb-4">
-        <svg className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#94a3b8]"
-          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-        <input type="text" value={busca} onChange={(e) => setBusca(e.target.value)}
-          placeholder="Buscar por nome, responsável ou e-mail..."
-          className="w-full rounded-xl border border-[#bfdbfe] bg-white py-3 pl-11 pr-10 text-[14px] text-[#0f172a] placeholder-[#94a3b8] outline-none [border-width:0.5px] focus:border-[#1a44a6] focus:ring-2 focus:ring-[#1a44a6]/15" />
-        {busca && (
-          <button type="button" onClick={() => setBusca("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-[#94a3b8] hover:text-[#475569]" aria-label="Limpar busca">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        )}
+      {/* Busca + Filtro de status */}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <svg className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#94a3b8]"
+            width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input type="text" value={busca} onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar por nome, responsável ou e-mail..."
+            className="w-full rounded-xl border border-[#bfdbfe] bg-white py-3 pl-11 pr-10 text-[14px] text-[#0f172a] placeholder-[#94a3b8] outline-none [border-width:0.5px] focus:border-[#1a44a6] focus:ring-2 focus:ring-[#1a44a6]/15" />
+          {busca && (
+            <button type="button" onClick={() => setBusca("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-1 text-[#94a3b8] hover:text-[#475569]" aria-label="Limpar busca">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        <select
+          value={filtroStatus}
+          onChange={(e) => setFiltroStatus(e.target.value as "" | "Pendente" | "Aprovada")}
+          className="rounded-xl border border-[#bfdbfe] bg-white px-4 py-3 text-[14px] text-[#0f172a] outline-none [border-width:0.5px] focus:border-[#1a44a6] focus:ring-2 focus:ring-[#1a44a6]/15 sm:w-48"
+        >
+          <option value="">Todos os status</option>
+          <option value="Pendente">Pendente</option>
+          <option value="Aprovada">Aprovada</option>
+        </select>
       </div>
 
       {/* Tabela */}
@@ -295,9 +309,9 @@ export default function EntidadesPage() {
               </svg>
             </div>
             <p className="text-[15px] font-medium text-[#1e3a8a]">
-              {busca ? "Nenhuma entidade encontrada para essa busca" : "Nenhuma entidade cadastrada"}
+              {busca || filtroStatus ? "Nenhuma entidade encontrada para esse filtro" : "Nenhuma entidade cadastrada"}
             </p>
-            {!busca && <p className="mt-1 text-sm text-[#94a3b8]">Clique em "Nova Entidade" para começar.</p>}
+            {!busca && !filtroStatus && <p className="mt-1 text-sm text-[#94a3b8]">Clique em "Nova Entidade" para começar.</p>}
           </div>
         ) : (
           <div className="overflow-x-auto">
