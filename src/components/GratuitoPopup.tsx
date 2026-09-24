@@ -16,14 +16,14 @@ export function GratuitoPopup() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!localStorage.getItem(STORAGE_KEY)) {
+    if (!sessionStorage.getItem(STORAGE_KEY)) {
       const t = setTimeout(() => setOpen(true), 1200);
       return () => clearTimeout(t);
     }
   }, []);
 
   function fechar() {
-    localStorage.setItem(STORAGE_KEY, "1");
+    sessionStorage.setItem(STORAGE_KEY, "1");
     setOpen(false);
   }
 
