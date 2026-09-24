@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 const TABLE = process.env.AIRTABLE_TABLE_ENTIDADES ?? "tblPIOP4H76gOOPSe";
+const WEBHOOK_NOVA_ENTIDADE =
+  "https://integrador.cashlocal.com.br/webhook/d1be98bc-923e-4dcf-ae5a-974ef17932e91234";
 
 function mapRecord(r) {
   const logoArr = r.fields["Logo"];
@@ -85,7 +87,22 @@ export async function POST(req) {
       );
     }
 
-    return NextResponse.json(mapRecord(data));
+    const entidade = mapRecord(data);
+
+    try {
+      await fetch(WEBHOOK_NOVA_ENTIDADE, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          tipo:   "nova-entidade-pendente",
+          entidade,
+        }),
+      });
+    } catch {
+      // Cadastro já foi salvo; falha no webhook não deve bloquear a resposta
+    }
+
+    return NextResponse.json(entidade);
   } catch {
     return NextResponse.json({ error: "Erro inesperado." }, { status: 500 });
   }
