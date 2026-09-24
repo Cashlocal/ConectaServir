@@ -121,12 +121,12 @@ export default function HomePage() {
             {/* Selo 100% Gratuito */}
             <div
               aria-label="100% Gratuito sem taxas"
-              className="absolute -right-4 -top-4 flex h-[86px] w-[86px] flex-col items-center justify-center rounded-full border-[3px] border-amber-300 bg-amber-400 shadow-[0_4px_20px_rgba(217,119,6,0.45)] md:h-[96px] md:w-[96px]"
+              className="absolute -left-6 -top-6 flex h-[108px] w-[108px] flex-col items-center justify-center rounded-full border-[4px] border-amber-300 shadow-[0_6px_28px_rgba(217,119,6,0.5)] md:h-[124px] md:w-[124px]"
               style={{ backgroundImage: "radial-gradient(circle at 35% 35%, #fbbf24, #d97706)" }}
             >
-              <span className="text-[22px] font-black leading-none text-white drop-shadow md:text-[26px]">100%</span>
-              <span className="text-[11px] font-black uppercase leading-tight tracking-wide text-white drop-shadow md:text-[12px]">GRATUITO</span>
-              <span className="text-[9px] font-bold uppercase tracking-widest text-amber-100 md:text-[10px]">SEM TAXAS</span>
+              <span className="text-[28px] font-black leading-none text-white drop-shadow md:text-[32px]">100%</span>
+              <span className="text-[13px] font-black uppercase leading-tight tracking-wide text-white drop-shadow md:text-[15px]">GRATUITO</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-amber-100 md:text-[11px]">SEM TAXAS</span>
             </div>
           </div>
         </div>
