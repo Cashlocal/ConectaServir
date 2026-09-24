@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 
 export async function GET(req) {
-  const apiKey = process.env.AIRTABLE_API_KEY;
-  const baseId = process.env.AIRTABLE_BASE_ID;
-  const table  = process.env.AIRTABLE_TABLE_VOLUNTARIOS;
+  const apiKey    = process.env.AIRTABLE_API_KEY;
+  const baseId    = process.env.AIRTABLE_BASE_ID;
+  const table     = process.env.AIRTABLE_TABLE_VOLUNTARIOS;
+  const tableProj = process.env.AIRTABLE_TABLE_PROJETOS;
 
   if (!apiKey || !baseId || !table) return NextResponse.json([]);
 
@@ -23,11 +24,38 @@ export async function GET(req) {
     params.append("fields[]", "Áreas de Interesse");
     params.append("sort[0][field]", "Nome Completo");
     params.append("sort[0][direction]", "asc");
-    if (cnpjEntidade) {
-      const digits = cnpjEntidade.replace(/\D/g, "");
+
+    if (cnpjEntidade && tableProj) {
+      // Estratégia: busca os projetos da entidade → coleta IDs dos voluntários vinculados
+      // (mais confiável do que um campo "CNPJ Entidade" no voluntário que pode não existir)
+      const digits   = cnpjEntidade.replace(/\D/g, "");
+      const projUrl  = new URL(
+        `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableProj)}`
+      );
+      projUrl.searchParams.append(
+        "filterByFormula",
+        `FIND("${digits}",SUBSTITUTE(ARRAYJOIN({CNPJ Entidade},""),"-",""))>0`
+      );
+      projUrl.searchParams.append("fields[]", "Voluntários");
+
+      const projRes = await fetch(projUrl.toString(), {
+        headers: { Authorization: `Bearer ${apiKey}` }, cache: "no-store",
+      });
+
+      if (!projRes.ok) return NextResponse.json([]);
+
+      const projData = await projRes.json();
+      const volIds   = (projData.records ?? []).flatMap((p) =>
+        Array.isArray(p.fields["Voluntários"]) ? p.fields["Voluntários"] : []
+      );
+      const uniqueIds = [...new Set(volIds)];
+
+      if (uniqueIds.length === 0) return NextResponse.json([]);
+
+      // Filtra voluntários por RECORD_ID() — sempre confiável
       params.append(
         "filterByFormula",
-        `FIND("${digits}",SUBSTITUTE({CNPJ Entidade},"-",""))>0`
+        `OR(${uniqueIds.map((id) => `RECORD_ID()="${id}"`).join(",")})`
       );
     }
 
