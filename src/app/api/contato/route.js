@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 const WEBHOOK_URL =
-  "https://integrador.cashlocal.com.br/webhook/d1be98bc-923e-4dcf-ae5a-974ef17932e9";
+  "https://integrador.cashlocal.com.br/webhook/d1be98bc-923e-4dcf-ae5a-974ef17932e1011";
 
 export async function POST(req) {
   try {
