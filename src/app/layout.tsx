@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
+import { TopBar } from "@/components/TopBar";
 import "./globals.css";
 
 const inter = Inter({
@@ -38,6 +39,7 @@ export default function RootLayout({
       <body
         className={`${inter.className} min-h-full flex flex-col bg-[var(--fundo-pagina)] text-[var(--texto-principal)]`}
       >
+        <TopBar />
         <Navbar />
         <div className="flex-1">{children}</div>
         <Footer />

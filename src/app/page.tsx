@@ -4,6 +4,7 @@ import {
   HERO_VOLUNTEERS_IMAGE_URL,
   REDE_GLOBAL_IMAGE_URL,
 } from "@/lib/heroVoluntariosImage";
+import { GratuitoPopup } from "@/components/GratuitoPopup";
 
 const cards = [
   {
@@ -41,6 +42,7 @@ const redeBullets: { text: string; dotClass: string }[] = [
 export default function HomePage() {
   return (
     <main>
+      <GratuitoPopup />
       {/* Hero — azul mais escuro e ilustração Manus CDN */}
       <section
         className="bg-[var(--fundo-secao)] px-6 py-20 lg:px-16"
@@ -105,7 +107,7 @@ export default function HomePage() {
               </Link>
             </div>
           </div>
-          <div className="relative w-full shrink-0 overflow-hidden rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.07)] transition-shadow duration-300 ease-out hover:shadow-[0_12px_40px_rgba(26,68,166,0.18)] md:w-[min(100%,520px)] md:max-w-[52%] lg:max-w-[520px]">
+          <div className="relative w-full shrink-0 overflow-visible rounded-3xl shadow-[0_2px_12px_rgba(0,0,0,0.07)] transition-shadow duration-300 ease-out hover:shadow-[0_12px_40px_rgba(26,68,166,0.18)] md:w-[min(100%,520px)] md:max-w-[52%] lg:max-w-[520px]">
             <Image
               src={HERO_VOLUNTEERS_IMAGE_URL}
               alt="Ilustração de voluntários colaborando em projetos sociais"
@@ -115,6 +117,17 @@ export default function HomePage() {
               priority
               unoptimized
             />
+
+            {/* Selo 100% Gratuito */}
+            <div
+              aria-label="100% Gratuito sem taxas"
+              className="absolute -right-4 -top-4 flex h-[86px] w-[86px] flex-col items-center justify-center rounded-full border-[3px] border-amber-300 bg-amber-400 shadow-[0_4px_20px_rgba(217,119,6,0.45)] md:h-[96px] md:w-[96px]"
+              style={{ backgroundImage: "radial-gradient(circle at 35% 35%, #fbbf24, #d97706)" }}
+            >
+              <span className="text-[22px] font-black leading-none text-white drop-shadow md:text-[26px]">100%</span>
+              <span className="text-[11px] font-black uppercase leading-tight tracking-wide text-white drop-shadow md:text-[12px]">GRATUITO</span>
+              <span className="text-[9px] font-bold uppercase tracking-widest text-amber-100 md:text-[10px]">SEM TAXAS</span>
+            </div>
           </div>
         </div>
       </section>
