@@ -62,9 +62,9 @@ export default function ContatoPage() {
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               </div>
-              <p className="text-[20px] font-semibold text-[#166534]">Mensagem enviada!</p>
+              <p className="text-[20px] font-semibold text-[#166534]">Mensagem registrada com sucesso!</p>
               <p className="mt-2 max-w-sm text-[14px] text-[#475569]">
-                Obrigado pelo contato. Em breve retornaremos no e-mail informado.
+                Em breve retornaremos no e-mail informado.
               </p>
               <button
                 type="button"

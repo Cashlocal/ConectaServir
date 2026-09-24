@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-const WEBHOOK_URL = process.env.CONTACT_WEBHOOK_URL ?? "";
+const WEBHOOK_URL =
+  "https://integrador.cashlocal.com.br/webhook/d1be98bc-923e-4dcf-ae5a-974ef17932e9";
 
 export async function POST(req) {
   try {
@@ -13,18 +14,23 @@ export async function POST(req) {
       );
     }
 
-    if (WEBHOOK_URL) {
-      await fetch(WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tipo: "contato",
-          nome:     nome.trim(),
-          email:    email.trim(),
-          mensagem: mensagem.trim(),
-          data:     new Date().toISOString(),
-        }),
-      });
+    const payload = {
+      nome:     nome.trim(),
+      email:    email.trim(),
+      mensagem: mensagem.trim(),
+    };
+
+    const hookRes = await fetch(WEBHOOK_URL, {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify(payload),
+    });
+
+    if (!hookRes.ok) {
+      return NextResponse.json(
+        { error: "Não foi possível registrar a mensagem. Tente novamente." },
+        { status: 502 }
+      );
     }
 
     return NextResponse.json({ ok: true });
